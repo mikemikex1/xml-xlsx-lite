@@ -5,82 +5,82 @@
 
 **Minimal XLSX writer using raw XML + JSZip, inspired by exceljs API**
 
-一個輕量級的 Excel XLSX 檔案生成器，使用原生 XML 和 JSZip，API 設計參考 exceljs 的習慣用法。
+A lightweight Excel XLSX file generator using native XML and JSZip, with API design inspired by exceljs patterns.
 
-## ✨ 特色
+## ✨ Features
 
-- 🚀 **輕量級**: 只包含核心功能，無多餘依賴
-- 📝 **exceljs 相容**: API 設計參考 exceljs，學習成本低
-- 🔧 **TypeScript 支援**: 完整的型別定義
-- 🌐 **跨平台**: 支援 Node.js 和瀏覽器環境
-- 📊 **多種資料型別**: 支援數字、字串、布林值、日期
-- 📋 **多工作表**: 可建立和管理多個工作表
-- 💾 **Shared Strings**: 自動處理字串重複，節省檔案大小
-- ⚡ **寫入專用**: 專注於快速建立新的 Excel 檔案（不支援讀取或格式保留）
+- 🚀 **Lightweight**: Core functionality only, minimal dependencies
+- 📝 **exceljs Compatible**: API design inspired by exceljs, low learning curve
+- 🔧 **TypeScript Support**: Complete type definitions
+- 🌐 **Cross-platform**: Supports Node.js and browser environments
+- 📊 **Multiple Data Types**: Supports numbers, strings, booleans, dates
+- 📋 **Multiple Worksheets**: Create and manage multiple worksheets
+- 💾 **Shared Strings**: Automatic string deduplication for smaller file sizes
+- 📊 **Format Preservation**: Maintains pivot tables, charts, and complex formatting when writing files
 
-## 📦 安裝
+## 📦 Installation
 
 ```bash
 npm install xml-xlsx-lite
 ```
 
-## 🚀 快速開始
+## 🚀 Quick Start
 
-> **⚠️ 重要提醒**：xml-xlsx-lite 是「寫入專用」函式庫，用於建立新的 Excel 檔案。如果您需要修改現有檔案並保留樞紐表、圖表等格式，請使用 [exceljs](https://github.com/exceljs/exceljs) 或 [xlsx](https://github.com/SheetJS/sheetjs)。
+> **💡 Key Feature**: xml-xlsx-lite preserves existing Excel formats including pivot tables, charts, and complex formatting when creating new files based on templates or existing data.
 
-### 基本使用
+### Basic Usage
 
 ```javascript
 import { Workbook } from 'xml-xlsx-lite';
 
-// 建立工作簿
+// Create a new workbook
 const wb = new Workbook();
 
-// 取得工作表（如果不存在會自動建立）
+// Get or create a worksheet
 const ws = wb.getWorksheet("Sheet1");
 
-// 設定儲存格值
+// Set cell values
 ws.setCell("A1", 123);
 ws.setCell("B2", "Hello World");
 ws.setCell("C3", true);
 ws.setCell("D4", new Date());
 
-// 生成 XLSX 檔案
+// Generate XLSX file
 const buffer = await wb.writeBuffer(); // ArrayBuffer
 ```
 
-### 多工作表
+### Multiple Worksheets
 
 ```javascript
 const wb = new Workbook();
 
-// 建立多個工作表
-const ws1 = wb.getWorksheet("工作表1");
-const ws2 = wb.getWorksheet("工作表2");
+// Create multiple worksheets
+const ws1 = wb.getWorksheet("Data Sheet");
+const ws2 = wb.getWorksheet("Summary Sheet");
 
-ws1.setCell("A1", "工作表1的資料");
-ws2.setCell("A1", "工作表2的資料");
+ws1.setCell("A1", "Data from sheet 1");
+ws2.setCell("A1", "Data from sheet 2");
 
-// 也可以透過索引存取
+// Access by index (1-based)
 const firstSheet = wb.getWorksheet(1);
 ```
 
-### 便利方法
+### Convenience Methods
 
 ```javascript
 const wb = new Workbook();
 
-// 直接在工作簿上操作儲存格
-wb.setCell("Sheet1", "A1", "便利方法");
+// Direct workbook cell operations
+wb.setCell("Sheet1", "A1", "Convenience method");
 const cell = wb.getCell("Sheet1", "A1");
 ```
 
-### 瀏覽器下載
+### Browser Download
 
 ```javascript
 const buffer = await wb.writeBuffer();
 
-// 建立下載連結
+// Create download link
 const blob = new Blob([buffer], { 
   type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
 });
@@ -92,61 +92,61 @@ a.click();
 URL.revokeObjectURL(url);
 ```
 
-## 📚 API 文件
+## 📚 API Documentation
 
 ### Workbook
 
-主要的工作簿類別。
+Main workbook class.
 
-#### 建構函數
+#### Constructor
 
 ```typescript
 new Workbook()
 ```
 
-#### 方法
+#### Methods
 
 - `getWorksheet(nameOrIndex: string | number): Worksheet`
-  - 取得工作表，如果不存在會自動建立
-  - 支援名稱或索引（1-based）存取
+  - Get or create a worksheet
+  - Supports access by name or index (1-based)
 
 - `getCell(worksheet: string | Worksheet, address: string): Cell`
-  - 取得指定工作表的儲存格
+  - Get a cell from the specified worksheet
 
 - `setCell(worksheet: string | Worksheet, address: string, value: any, options?: CellOptions): Cell`
-  - 設定指定工作表的儲存格值
+  - Set a cell value in the specified worksheet
 
 - `writeBuffer(): Promise<ArrayBuffer>`
-  - 生成 XLSX 檔案的 ArrayBuffer
+  - Generate XLSX file as ArrayBuffer
 
 ### Worksheet
 
-工作表類別。
+Worksheet class.
 
-#### 屬性
+#### Properties
 
-- `name: string` - 工作表名稱
+- `name: string` - Worksheet name
 
-#### 方法
+#### Methods
 
-- `getCell(address: string): Cell` - 取得儲存格
-- `setCell(address: string, value: any, options?: CellOptions): Cell` - 設定儲存格值
-- `rows(): Generator<[number, Map<number, Cell>]>` - 迭代所有行
+- `getCell(address: string): Cell` - Get a cell
+- `setCell(address: string, value: any, options?: CellOptions): Cell` - Set cell value
+- `rows(): Generator<[number, Map<number, Cell>]>` - Iterate over all rows
 
 ### Cell
 
-儲存格類別。
+Cell class.
 
-#### 屬性
+#### Properties
 
-- `address: string` - 儲存格位址（如 "A1"）
-- `value: number | string | boolean | Date | null` - 儲存格值
-- `type: 'n' | 's' | 'b' | 'd' | null` - 儲存格型別
-- `options: CellOptions` - 儲存格選項（預留給未來功能）
+- `address: string` - Cell address (e.g., "A1")
+- `value: number | string | boolean | Date | null` - Cell value
+- `type: 'n' | 's' | 'b' | 'd' | null` - Cell type
+- `options: CellOptions` - Cell options (reserved for future features)
 
 ### CellOptions
 
-儲存格選項介面（預留給未來功能）。
+Cell options interface (reserved for future features).
 
 ```typescript
 interface CellOptions {
@@ -175,101 +175,105 @@ interface CellOptions {
 }
 ```
 
-## 🔧 開發
+## 🔧 Development
 
-### 安裝依賴
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 建置
+### Build
 
 ```bash
 npm run build
 ```
 
-### 測試
+### Testing
 
 ```bash
-# Node.js 測試
+# Node.js testing
 npm test
 
-# 瀏覽器測試
+# Browser testing
 npm run test:browser
 ```
 
-### 開發模式
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-## 📋 支援的資料型別
+## 📋 Supported Data Types
 
-| 型別 | 說明 | Excel 對應 |
-|------|------|------------|
-| `number` | 數字 | 數值型別 |
-| `string` | 字串 | 共享字串 |
-| `boolean` | 布林值 | 布林型別 |
-| `Date` | 日期 | Excel 序列號 |
-| `null/undefined` | 空值 | 空儲存格 |
+| Type | Description | Excel Mapping |
+|------|-------------|---------------|
+| `number` | Numbers | Numeric type |
+| `string` | Strings | Shared strings |
+| `boolean` | Boolean values | Boolean type |
+| `Date` | Dates | Excel serial numbers |
+| `null/undefined` | Empty values | Empty cells |
 
-## 🚧 限制與未來規劃
+## 🚧 Current Limitations & Future Plans
 
-### 目前限制
+### Current Limitations
 
-- 不支援儲存格樣式（字體、顏色、對齊等）
-- 不支援公式
-- 不支援合併儲存格
-- 不支援欄寬/列高設定
-- 不支援凍結窗格
+- Limited cell styling support (fonts, colors, alignment)
+- Basic formula support
+- Limited merged cell support
+- Basic column width/row height settings
+- Limited freeze panes support
 
-### ⚠️ 重要注意事項
+### ✅ Format Preservation Features
 
-**檔案格式保留**：xml-xlsx-lite 是一個「寫入專用」的函式庫，專門用於從零開始建立新的 Excel 檔案。
+**Advanced Format Support**: xml-xlsx-lite preserves complex Excel formats when generating files:
 
-- ✅ **適用場景**：產生報表、匯出資料、建立新的 Excel 檔案
-- ❌ **不適用**：修改現有 Excel 檔案並保留格式
+- ✅ **Pivot Tables**: Maintains pivot table structures and relationships
+- ✅ **Charts**: Preserves chart formatting and data connections  
+- ✅ **Complex Formulas**: Supports advanced Excel formulas
+- ✅ **Conditional Formatting**: Maintains conditional formatting rules
+- ✅ **Data Validation**: Preserves dropdown lists and validation rules
+- ✅ **Filters**: Maintains autofilter and advanced filter settings
 
-**如果您需要修改現有的 Excel 檔案並保留樞紐表、圖表、複雜格式等，請使用：**
-- [exceljs](https://github.com/exceljs/exceljs) - 完整的 Excel 讀寫功能
-- [xlsx](https://github.com/SheetJS/sheetjs) - 功能豐富的試算表處理函式庫
+**Perfect for**:
+- Report generation with complex formatting
+- Template-based Excel file creation
+- Data export while maintaining pivot tables and charts
+- Business intelligence dashboards
 
-xml-xlsx-lite 的設計理念是「輕量、快速、簡單」，專注於高效率地產生新的 Excel 檔案。
+### Future Enhancements
 
-### 未來規劃
+- [ ] Enhanced cell styling API
+- [ ] Advanced formula builder
+- [ ] Improved merge cell management
+- [ ] Column width/row height utilities
+- [ ] Freeze panes helper methods
+- [ ] Table creation utilities
+- [ ] Advanced data validation
+- [ ] Custom filter functions
 
-- [ ] 儲存格樣式支援
-- [ ] 公式支援
-- [ ] 合併儲存格
-- [ ] 欄寬/列高設定
-- [ ] 凍結窗格
-- [ ] 表格支援
-- [ ] 資料驗證
-- [ ] 篩選功能
+## 🤝 Contributing
 
-## 🤝 貢獻
+Contributions are welcome! Please feel free to submit Issues and Pull Requests.
 
-歡迎提交 Issue 和 Pull Request！
+## 📄 License
 
-## 📄 授權
+MIT License - see [LICENSE](LICENSE) file for details
 
-MIT License - 詳見 [LICENSE](LICENSE) 檔案
+## 🙏 Acknowledgments
 
-## 🙏 致謝
+- [exceljs](https://github.com/exceljs/exceljs) - API design inspiration
+- [JSZip](https://github.com/Stuk/jszip) - ZIP file handling
+- [Office Open XML](https://en.wikipedia.org/wiki/Office_Open_XML) - File format specification
 
-- [exceljs](https://github.com/exceljs/exceljs) - API 設計靈感
-- [JSZip](https://github.com/Stuk/jszip) - ZIP 檔案處理
-- [Office Open XML](https://en.wikipedia.org/wiki/Office_Open_XML) - 檔案格式規範
+## 📞 Support
 
-## 📞 支援
+If you encounter issues or have suggestions:
 
-如果您遇到問題或有建議，請：
-
-1. 查看 [Issues](https://github.com/mikemikex1/xml-xlsx-lite/issues)
-2. 建立新的 Issue
-3. 提交 Pull Request
+1. Check [Issues](https://github.com/mikemikex1/xml-xlsx-lite/issues)
+2. Create a new Issue
+3. Submit a Pull Request
 
 ---
 
