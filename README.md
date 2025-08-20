@@ -16,6 +16,7 @@
 - 📊 **多種資料型別**: 支援數字、字串、布林值、日期
 - 📋 **多工作表**: 可建立和管理多個工作表
 - 💾 **Shared Strings**: 自動處理字串重複，節省檔案大小
+- ⚡ **寫入專用**: 專注於快速建立新的 Excel 檔案（不支援讀取或格式保留）
 
 ## 📦 安裝
 
@@ -24,6 +25,8 @@ npm install xml-xlsx-lite
 ```
 
 ## 🚀 快速開始
+
+> **⚠️ 重要提醒**：xml-xlsx-lite 是「寫入專用」函式庫，用於建立新的 Excel 檔案。如果您需要修改現有檔案並保留樞紐表、圖表等格式，請使用 [exceljs](https://github.com/exceljs/exceljs) 或 [xlsx](https://github.com/SheetJS/sheetjs)。
 
 ### 基本使用
 
@@ -221,6 +224,19 @@ npm run dev
 - 不支援合併儲存格
 - 不支援欄寬/列高設定
 - 不支援凍結窗格
+
+### ⚠️ 重要注意事項
+
+**檔案格式保留**：xml-xlsx-lite 是一個「寫入專用」的函式庫，專門用於從零開始建立新的 Excel 檔案。
+
+- ✅ **適用場景**：產生報表、匯出資料、建立新的 Excel 檔案
+- ❌ **不適用**：修改現有 Excel 檔案並保留格式
+
+**如果您需要修改現有的 Excel 檔案並保留樞紐表、圖表、複雜格式等，請使用：**
+- [exceljs](https://github.com/exceljs/exceljs) - 完整的 Excel 讀寫功能
+- [xlsx](https://github.com/SheetJS/sheetjs) - 功能豐富的試算表處理函式庫
+
+xml-xlsx-lite 的設計理念是「輕量、快速、簡單」，專注於高效率地產生新的 Excel 檔案。
 
 ### 未來規劃
 
