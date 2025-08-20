@@ -9,20 +9,30 @@ export interface CellOptions {
     size?: number;
     name?: string;
     color?: string;
+    underline?: boolean;
+    strike?: boolean;
   };
   alignment?: {
-    horizontal?: 'left' | 'center' | 'right';
-    vertical?: 'top' | 'middle' | 'bottom';
+    horizontal?: 'left' | 'center' | 'right' | 'justify' | 'distributed';
+    vertical?: 'top' | 'middle' | 'bottom' | 'justify' | 'distributed';
     wrapText?: boolean;
+    indent?: number;
+    rotation?: number;
   };
   fill?: {
     type?: 'pattern' | 'gradient';
     color?: string;
-    patternType?: string;
+    patternType?: 'none' | 'solid' | 'darkGray' | 'mediumGray' | 'lightGray' | 'darkHorizontal' | 'darkVertical' | 'darkDown' | 'darkUp' | 'darkGrid' | 'darkTrellis' | 'lightHorizontal' | 'lightVertical' | 'lightDown' | 'lightUp' | 'lightGrid' | 'lightTrellis' | 'gray125' | 'gray0625';
+    fgColor?: string;
+    bgColor?: string;
   };
   border?: {
-    style?: string;
+    style?: 'none' | 'thin' | 'medium' | 'dashed' | 'dotted' | 'thick' | 'double' | 'hair' | 'mediumDashed' | 'dashDot' | 'mediumDashDot' | 'dashDotDot' | 'mediumDashDotDot' | 'slantDashDot';
     color?: string;
+    top?: { style?: string; color?: string };
+    left?: { style?: string; color?: string };
+    bottom?: { style?: string; color?: string };
+    right?: { style?: string; color?: string };
   };
 }
 
@@ -168,11 +178,23 @@ function inferCellType(value: any): 'n' | 's' | 'b' | 'd' | null {
 
 /*** Workbook ***/
 export class WorkbookImpl implements Workbook {
-  private _sheets: WorksheetImpl[];
+  private _sheets: WorksheetImpl[] = [];
   private _sheetByName: Map<string, WorksheetImpl>;
   // shared strings handling (Excel prefers sharedStrings.xml for strings)
-  private _sst: Map<string, number>; // string -> idx
-  private _sstArr: string[];     // idx -> string
+  private _sst = new Map<string, number>();
+  private _sstArr: string[] = [];
+  
+  // 樣式管理系統
+  private _styles = new Map<string, number>();
+  private _fonts = new Map<string, number>();
+  private _fills = new Map<string, number>();
+  private _borders = new Map<string, number>();
+  private _alignments = new Map<string, number>();
+  private _nextStyleId = 1;
+  private _nextFontId = 1;
+  private _nextFillId = 1;
+  private _nextBorderId = 1;
+  private _nextAlignmentId = 1;
 
   constructor() {
     this._sheets = [];
@@ -180,6 +202,86 @@ export class WorkbookImpl implements Workbook {
     // shared strings handling (Excel prefers sharedStrings.xml for strings)
     this._sst = new Map(); // string -> idx
     this._sstArr = [];     // idx -> string
+    // 初始化預設樣式
+    this._initDefaultStyles();
+  }
+
+  private _initDefaultStyles() {
+    // 預設字體
+    this._fonts.set('default', 0);
+    this._nextFontId = 1;
+    
+    // 預設填滿
+    this._fills.set('none', 0);
+    this._nextFillId = 1;
+    
+    // 預設邊框
+    this._borders.set('none', 0);
+    this._nextBorderId = 1;
+    
+    // 預設對齊
+    this._alignments.set('default', 0);
+    this._nextAlignmentId = 1;
+    
+    // 預設樣式
+    this._styles.set('default', 0);
+    this._nextStyleId = 1;
+  }
+
+  // 樣式索引管理方法
+  private _getFontIndex(font: CellOptions['font']): number {
+    if (!font) return 0;
+    
+    const key = JSON.stringify(font);
+    if (this._fonts.has(key)) return this._fonts.get(key)!;
+    
+    const id = this._nextFontId++;
+    this._fonts.set(key, id);
+    return id;
+  }
+
+  private _getFillIndex(fill: CellOptions['fill']): number {
+    if (!fill) return 0;
+    
+    const key = JSON.stringify(fill);
+    if (this._fills.has(key)) return this._fills.get(key)!;
+    
+    const id = this._nextFillId++;
+    this._fills.set(key, id);
+    return id;
+  }
+
+  private _getBorderIndex(border: CellOptions['border']): number {
+    if (!border) return 0;
+    
+    const key = JSON.stringify(border);
+    if (this._borders.has(key)) return this._borders.get(key)!;
+    
+    const id = this._nextBorderId++;
+    this._borders.set(key, id);
+    return id;
+  }
+
+  private _getAlignmentIndex(alignment: CellOptions['alignment']): number {
+    if (!alignment) return 0;
+    
+    const key = JSON.stringify(alignment);
+    if (this._alignments.has(key)) return this._alignments.get(key)!;
+    
+    const id = this._nextAlignmentId++;
+    this._alignments.set(key, id);
+    return id;
+  }
+
+  private _getStyleIndex(options: CellOptions): number {
+    if (!options.font && !options.fill && !options.border && !options.alignment) return 0;
+    
+    const key = JSON.stringify(options);
+    if (this._styles.has(key)) return this._styles.get(key)!;
+    
+    const id = this._nextStyleId++;
+    this._styles.set(key, id);
+    return id;
   }
 
   /** exceljs-like */
@@ -217,10 +319,10 @@ export class WorkbookImpl implements Workbook {
     const rootRels = buildRootRels();
     const { workbookXml, workbookRelsXml } = buildWorkbookXml(this._sheets);
 
-    const sheetsXml = this._sheets.map((ws, i) => buildSheetXml(ws, i + 1, this._sst));
+    const sheetsXml = this._sheets.map((ws, i) => buildSheetXml(ws, i + 1, this._sst, this));
 
     const sharedStringsXml = buildSharedStringsXml(this._sst, this._sstArr);
-    const stylesXml = buildStylesXml();
+    const stylesXml = buildStylesXml(this);
 
     // Add to zip
     zip.file("[Content_Types].xml", contentTypes);
@@ -306,7 +408,7 @@ function buildWorkbookXml(sheets: WorksheetImpl[]): { workbookXml: string; workb
   return { workbookXml: workbookXml.join(""), workbookRelsXml: workbookRels.join("") };
 }
 
-function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, number>): string {
+function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, number>, workbook: WorkbookImpl): string {
   // Build <sheetData> with rows and cells
   const parts = [
     xmlHeader(),
@@ -330,7 +432,12 @@ function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, num
       const raddr = cell.address; // e.g., "B12"
       const { t, v } = buildCellValue(cell, sstMap);
       const tAttr = t ? ` t="${t}"` : "";
-      parts.push(`<c r="${raddr}"${tAttr}><v>${v}</v></c>`);
+      
+      // 添加樣式索引
+      const styleId = (workbook as any)._getStyleIndex(cell.options);
+      const styleAttr = styleId > 0 ? ` s="${styleId}"` : "";
+      
+      parts.push(`<c r="${raddr}"${tAttr}${styleAttr}><v>${v}</v></c>`);
     }
     parts.push("</row>");
   }
@@ -373,25 +480,161 @@ function buildSharedStringsXml(sstMap: Map<string, number>, sstArr: string[]): s
   return parts.join("");
 }
 
-function buildStylesXml(): string {
-  // Minimal styles part so Excel is happy. No custom formats yet.
-  return [
+function buildStylesXml(workbook: WorkbookImpl): string {
+  const parts = [
     xmlHeader(),
-    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
-    // number formats
-    "<numFmts count=\"0\"/>",
-    // fonts, fills, borders (at least one default required)
-    "<fonts count=\"1\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>",
-    "<fills count=\"1\"><fill><patternFill patternType=\"none\"/></fill></fills>",
-    "<borders count=\"1\"><border/></borders>",
-    // cell style formats (one default xf)
-    "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>",
-    // cell formats (one default xf)
-    "<cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/></cellXfs>",
-    // stylesheet cell styles (Normal)
-    "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>",
-    "</styleSheet>"
-  ].join("");
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+  ];
+
+  // 生成字體 XML
+  const fonts = Array.from((workbook as any)._fonts.entries() as Iterable<[string, number]>).sort((a, b) => a[1] - b[1]);
+  parts.push(`<fonts count="${fonts.length}">`);
+  for (const [fontKey, fontId] of fonts) {
+    if (fontId === 0) {
+      // 預設字體
+      parts.push('<font><sz val="11"/><name val="Calibri"/></font>');
+    } else {
+      const font = JSON.parse(fontKey);
+      const fontParts = ['<font>'];
+      if (font.size) fontParts.push(`<sz val="${font.size}"/>`);
+      if (font.name) fontParts.push(`<name val="${font.name}"/>`);
+      if (font.bold) fontParts.push('<b/>');
+      if (font.italic) fontParts.push('<i/>');
+      if (font.underline) fontParts.push('<u/>');
+      if (font.strike) fontParts.push('<strike/>');
+      if (font.color) fontParts.push(`<color rgb="${font.color.replace('#', '')}"/>`);
+      fontParts.push('</font>');
+      parts.push(fontParts.join(''));
+    }
+  }
+  parts.push('</fonts>');
+
+  // 生成填滿 XML
+  const fills = Array.from((workbook as any)._fills.entries() as Iterable<[string, number]>).sort((a, b) => a[1] - b[1]);
+  parts.push(`<fills count="${fills.length}">`);
+  for (const [fillKey, fillId] of fills) {
+    if (fillId === 0) {
+      // 預設填滿
+      parts.push('<fill><patternFill patternType="none"/></fill>');
+    } else {
+      const fill = JSON.parse(fillKey);
+      const fillParts = ['<fill>'];
+      if (fill.type === 'pattern') {
+        fillParts.push('<patternFill');
+        if (fill.patternType) fillParts.push(`patternType="${fill.patternType}"`);
+        fillParts.push('>');
+        if (fill.fgColor) fillParts.push(`<fgColor rgb="${fill.fgColor.replace('#', '')}"/>`);
+        if (fill.bgColor) fillParts.push(`<bgColor rgb="${fill.bgColor.replace('#', '')}"/>`);
+        fillParts.push('</patternFill>');
+      }
+      fillParts.push('</fill>');
+      parts.push(fillParts.join(''));
+    }
+  }
+  parts.push('</fills>');
+
+  // 生成邊框 XML
+  const borders = Array.from((workbook as any)._borders.entries() as Iterable<[string, number]>).sort((a, b) => a[1] - b[1]);
+  parts.push(`<borders count="${borders.length}">`);
+  for (const [borderKey, borderId] of borders) {
+    if (borderId === 0) {
+      // 預設邊框
+      parts.push('<border/>');
+    } else {
+      const border = JSON.parse(borderKey);
+      const borderParts = ['<border>'];
+      
+      // 處理各個邊的樣式
+      const sides = ['left', 'right', 'top', 'bottom'];
+      for (const side of sides) {
+        if (border[side]) {
+          const sideBorder = border[side];
+          borderParts.push(`<${side}`);
+          if (sideBorder.style) borderParts.push(`style="${sideBorder.style}"`);
+          borderParts.push('>');
+          if (sideBorder.color) borderParts.push(`<color rgb="${sideBorder.color.replace('#', '')}"/>`);
+          borderParts.push(`</${side}>`);
+        }
+      }
+      
+      borderParts.push('</border>');
+      parts.push(borderParts.join(''));
+    }
+  }
+  parts.push('</borders>');
+
+  // 生成對齊 XML
+  const alignments = Array.from((workbook as any)._alignments.entries() as Iterable<[string, number]>).sort((a, b) => a[1] - b[1]);
+  parts.push(`<cellStyleXfs count="${alignments.length}">`);
+  for (const [alignmentKey, alignmentId] of alignments) {
+    if (alignmentId === 0) {
+      // 預設對齊
+      parts.push('<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>');
+    } else {
+      const alignment = JSON.parse(alignmentKey);
+      const xfParts = ['<xf'];
+      if (alignment.font) xfParts.push('fontId="0"');
+      if (alignment.fill) xfParts.push('fillId="0"');
+      if (alignment.border) xfParts.push('borderId="0"');
+      xfParts.push('>');
+      
+      // 對齊設定
+      if (alignment.horizontal || alignment.vertical || alignment.wrapText || alignment.indent || alignment.rotation) {
+        const alignParts = ['<alignment'];
+        if (alignment.horizontal) alignParts.push(`horizontal="${alignment.horizontal}"`);
+        if (alignment.vertical) alignParts.push(`vertical="${alignment.vertical}"`);
+        if (alignment.wrapText) alignParts.push('wrapText="1"');
+        if (alignment.indent) alignParts.push(`indent="${alignment.indent}"`);
+        if (alignment.rotation) alignParts.push(`textRotation="${alignment.rotation}"`);
+        alignParts.push('/>');
+        xfParts.push(alignParts.join(' '));
+      }
+      
+      xfParts.push('</xf>');
+      parts.push(xfParts.join(' '));
+    }
+  }
+  parts.push('</cellStyleXfs>');
+
+  // 生成儲存格樣式 XML
+  const styles = Array.from((workbook as any)._styles.entries() as Iterable<[string, number]>).sort((a, b) => a[1] - b[1]);
+  parts.push(`<cellXfs count="${styles.length}">`);
+  for (const [styleKey, styleId] of styles) {
+    if (styleId === 0) {
+      // 預設樣式
+      parts.push('<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>');
+    } else {
+      const style = JSON.parse(styleKey);
+      const xfParts = ['<xf'];
+      if (style.font) xfParts.push('fontId="0"');
+      if (style.fill) xfParts.push('fillId="0"');
+      if (style.border) xfParts.push('borderId="0"');
+      xfParts.push('xfId="0"');
+      xfParts.push('>');
+      
+      // 對齊設定
+      if (style.alignment) {
+        const alignParts = ['<alignment'];
+        if (style.alignment.horizontal) alignParts.push(`horizontal="${style.alignment.horizontal}"`);
+        if (style.alignment.vertical) alignParts.push(`vertical="${style.alignment.vertical}"`);
+        if (style.alignment.wrapText) alignParts.push('wrapText="1"');
+        if (style.alignment.indent) alignParts.push(`indent="${style.indent}"`);
+        if (style.alignment.rotation) alignParts.push(`textRotation="${style.alignment.rotation}"`);
+        alignParts.push('/>');
+        xfParts.push(alignParts.join(' '));
+      }
+      
+      xfParts.push('</xf>');
+      parts.push(xfParts.join(' '));
+    }
+  }
+  parts.push('</cellXfs>');
+
+  // 樣式名稱
+  parts.push('<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>');
+  
+  parts.push("</styleSheet>");
+  return parts.join("");
 }
 
 /*** XML helpers ***/
