@@ -1,0 +1,59 @@
+{
+  "name": "xml-xlsx-lite",
+  "version": "1.0.0",
+  "description": "Minimal XLSX writer using raw XML + JSZip, inspired by exceljs API",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "node test/test.js",
+    "test:browser": "node test/test-browser.js",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "xlsx",
+    "excel",
+    "spreadsheet",
+    "xml",
+    "jszip",
+    "exceljs",
+    "lightweight",
+    "minimal"
+  ],
+  "author": "Mike",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikemikex1/xml-xlsx-lite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mikemikex1/xml-xlsx-lite/issues"
+  },
+  "homepage": "https://github.com/mikemikex1/xml-xlsx-lite#readme",
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
