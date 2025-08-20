@@ -7,16 +7,33 @@
 
 A lightweight Excel XLSX file generator using native XML and JSZip, with API design inspired by exceljs patterns.
 
-## ✨ Features
+## ✨ 功能特色
 
-- 🚀 **Lightweight**: Core functionality only, minimal dependencies
-- 📝 **exceljs Compatible**: API design inspired by exceljs, low learning curve
-- 🔧 **TypeScript Support**: Complete type definitions
-- 🌐 **Cross-platform**: Supports Node.js and browser environments
-- 📊 **Multiple Data Types**: Supports numbers, strings, booleans, dates
-- 📋 **Multiple Worksheets**: Create and manage multiple worksheets
-- 💾 **Shared Strings**: Automatic string deduplication for smaller file sizes
-- 📊 **Format Preservation**: Maintains pivot tables, charts, and complex formatting when writing files
+### 🎯 Phase 1: 基礎功能 ✅
+- **基本儲存格操作**: 支援文字、數字、布林值、日期等資料型別
+- **多工作表支援**: 可建立多個工作表
+- **多種資料型別**: 自動處理不同資料型別的轉換
+- **Shared Strings 支援**: 優化字串儲存，減少檔案大小
+- **基本樣式結構**: 為進階樣式功能奠定基礎
+
+### 🎨 Phase 2: 樣式支援 ✅
+- **字體設定**: 粗體、斜體、大小、顏色、底線、刪除線
+- **對齊設定**: 水平/垂直對齊、自動換行、縮排、文字旋轉
+- **填滿設定**: 背景色、圖案填滿、前景色/背景色
+- **邊框設定**: 多種邊框樣式、顏色、各邊獨立設定
+
+### 📋 Phase 3: 進階功能 🚧
+- 公式支援
+- 合併儲存格
+- 欄寬/列高設定
+- 凍結窗格
+- 表格支援
+
+### ⚡ Phase 4: 效能優化 📋
+- 記憶體使用優化
+- 大型檔案處理
+- 串流處理支援
+- 快取機制
 
 ## 📦 Installation
 
@@ -28,25 +45,86 @@ npm install xml-xlsx-lite
 
 > **💡 Key Feature**: xml-xlsx-lite preserves existing Excel formats including pivot tables, charts, and complex formatting when creating new files based on templates or existing data.
 
-### Basic Usage
+### 基本使用
 
 ```javascript
 import { Workbook } from 'xml-xlsx-lite';
 
-// Create a new workbook
 const wb = new Workbook();
+const ws = wb.getWorksheet('Sheet1');
 
-// Get or create a worksheet
-const ws = wb.getWorksheet("Sheet1");
+// 設定儲存格值
+ws.setCell('A1', 'Hello World');
+ws.setCell('B1', 42);
+ws.setCell('C1', new Date());
 
-// Set cell values
-ws.setCell("A1", 123);
-ws.setCell("B2", "Hello World");
-ws.setCell("C3", true);
-ws.setCell("D4", new Date());
+// 生成 Excel 檔案
+const buffer = await wb.writeBuffer();
+```
 
-// Generate XLSX file
-const buffer = await wb.writeBuffer(); // ArrayBuffer
+### 🎨 樣式支援
+
+```javascript
+// 字體樣式
+ws.setCell('A1', '標題', {
+  font: {
+    bold: true,
+    size: 16,
+    name: '微軟正黑體',
+    color: '#FF0000'
+  }
+});
+
+// 對齊樣式
+ws.setCell('B1', '置中對齊', {
+  alignment: {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: true
+  }
+});
+
+// 填滿樣式
+ws.setCell('C1', '紅色背景', {
+  fill: {
+    type: 'pattern',
+    patternType: 'solid',
+    fgColor: '#FF0000'
+  }
+});
+
+// 邊框樣式
+ws.setCell('D1', '粗邊框', {
+  border: {
+    top: { style: 'thick', color: '#000000' },
+    bottom: { style: 'thick', color: '#000000' },
+    left: { style: 'thick', color: '#000000' },
+    right: { style: 'thick', color: '#000000' }
+  }
+});
+
+// 組合樣式
+ws.setCell('E1', '完整樣式', {
+  font: {
+    bold: true,
+    italic: true,
+    size: 18,
+    color: '#FFFFFF'
+  },
+  fill: {
+    type: 'pattern',
+    patternType: 'solid',
+    fgColor: '#000000'
+  },
+  border: {
+    style: 'double',
+    color: '#FF0000'
+  },
+  alignment: {
+    horizontal: 'center',
+    vertical: 'middle'
+  }
+});
 ```
 
 ### Multiple Worksheets
