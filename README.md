@@ -127,6 +127,31 @@ ws.setCell('E1', '完整樣式', {
 });
 ```
 
+### 🚀 Phase 3: 進階功能
+
+```javascript
+// 合併儲存格
+ws.setCell('A1', '合併標題', {
+  font: { bold: true, size: 16 },
+  alignment: { horizontal: 'center' }
+});
+ws.mergeCells('A1:C1'); // 合併 A1 到 C1
+
+// 欄寬/列高設定
+ws.setColumnWidth('A', 15);  // 設定 A 欄寬度為 15
+ws.setColumnWidth('B', 20);  // 設定 B 欄寬度為 20
+ws.setRowHeight(1, 30);      // 設定第 1 列高度為 30
+
+// 凍結窗格
+ws.freezePanes(1, 1);        // 凍結第一行和第一列
+
+// 獲取設定資訊
+console.log('合併範圍:', ws.getMergedRanges());
+console.log('凍結窗格:', ws.getFreezePanes());
+console.log('A 欄寬度:', ws.getColumnWidth('A'));
+console.log('第 1 列高度:', ws.getRowHeight(1));
+```
+
 ### Multiple Worksheets
 
 ```javascript
