@@ -293,29 +293,68 @@ export class PivotTableImpl implements PivotTable {
    * 添加小計行
    */
   private _addSubtotalRows(): void {
-    // 實現小計行邏輯
+    if (!this.config.showRowSubtotals) return;
+    
+    const rowFields = this.config.fields.filter(f => f.type === 'row');
+    if (rowFields.length === 0) return;
+    
+    // 為每個行欄位添加小計行
+    for (const field of rowFields) {
+      if (field.showSubtotal) {
+        this._addFieldSubtotal(field);
+      }
+    }
   }
 
   /**
    * 添加總計行
    */
   private _addGrandTotalRow(): void {
-    // 實現總計行邏輯
+    if (!this.config.showGrandTotals) return;
+    
+    // 添加總計行到 Pivot Table 底部
+    const totalRow: any[] = ['總計'];
+    
+    // 計算每列的總計
+    const columnFields = this.config.fields.filter(f => f.type === 'column');
+    for (const field of columnFields) {
+      const values = this._getColumnValues(field.sourceColumn);
+      const total = this._calculateFieldTotal(values, field.function);
+      totalRow.push(total);
+    }
+    
+    // 添加總計行到結果資料
+    if (this._processedData.length > 0) {
+      this._processedData.push(totalRow);
+    }
   }
 
   /**
    * 計算總計
    */
   private _calculateTotals(): void {
-    // 實現總計計算邏輯
-    // 這裡可以添加行總計、列總計等計算
+    // 計算行總計
+    this._calculateRowTotals();
+    
+    // 計算列總計
+    this._calculateColumnTotals();
+    
+    // 計算總計
+    this._calculateGrandTotal();
   }
 
   /**
    * 更新目標工作表
    */
   private _updateTargetWorksheet(): void {
-    // 實現更新目標工作表的邏輯
+    // 清除現有內容
+    this._clearTargetWorksheet();
+    
+    // 寫入 Pivot Table 資料
+    this._writePivotData();
+    
+    // 應用樣式
+    this._applyPivotStyles();
   }
 
   /**
@@ -326,6 +365,153 @@ export class PivotTableImpl implements PivotTable {
     
     const headerRow = this._sourceData[0];
     return headerRow.findIndex(header => header === columnName);
+  }
+
+  /**
+   * 添加欄位小計
+   */
+  private _addFieldSubtotal(field: PivotField): void {
+    // 實現欄位小計邏輯
+    const fieldValues = this._fieldValues.get(field.sourceColumn);
+    if (!fieldValues) return;
+    
+    // 為每個唯一值添加小計行
+    for (const value of fieldValues) {
+      const subtotalRow = [`${value} 小計`];
+      // 這裡可以添加小計計算邏輯
+      this._processedData.push(subtotalRow);
+    }
+  }
+
+  /**
+   * 取得欄位值
+   */
+  private _getColumnValues(columnName: string): any[] {
+    const colIndex = this._getColumnIndex(columnName);
+    if (colIndex === -1) return [];
+    
+    const values: any[] = [];
+    for (let i = 1; i < this._sourceData.length; i++) {
+      if (this._sourceData[i] && this._sourceData[i][colIndex] !== undefined) {
+        values.push(this._sourceData[i][colIndex]);
+      }
+    }
+    return values;
+  }
+
+  /**
+   * 計算欄位總計
+   */
+  private _calculateFieldTotal(values: any[], functionType?: string): number {
+    if (!values || values.length === 0) return 0;
+    
+    const numericValues = values.filter(v => typeof v === 'number');
+    if (numericValues.length === 0) return 0;
+    
+    switch (functionType) {
+      case 'sum':
+        return numericValues.reduce((sum, val) => sum + val, 0);
+      case 'count':
+        return values.length;
+      case 'average':
+        return numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length;
+      case 'max':
+        return Math.max(...numericValues);
+      case 'min':
+        return Math.min(...numericValues);
+      default:
+        return numericValues.reduce((sum, val) => sum + val, 0);
+    }
+  }
+
+  /**
+   * 計算行總計
+   */
+  private _calculateRowTotals(): void {
+    // 實現行總計計算邏輯
+    if (this._processedData.length === 0) return;
+    
+    // 為每行添加總計
+    for (let i = 0; i < this._processedData.length; i++) {
+      const row = this._processedData[i];
+      if (row.length > 1) {
+        const numericValues = row.slice(1).filter(v => typeof v === 'number');
+        const rowTotal = numericValues.reduce((sum, val) => sum + val, 0);
+        row.push(rowTotal);
+      }
+    }
+  }
+
+  /**
+   * 計算列總計
+   */
+  private _calculateColumnTotals(): void {
+    // 實現列總計計算邏輯
+    if (this._processedData.length === 0) return;
+    
+    // 計算每列的總計
+    const maxCols = Math.max(...this._processedData.map(row => row.length));
+    for (let col = 0; col < maxCols; col++) {
+      let colTotal = 0;
+      for (let row = 0; row < this._processedData.length; row++) {
+        const value = this._processedData[row][col];
+        if (typeof value === 'number') {
+          colTotal += value;
+        }
+      }
+      // 將列總計添加到最後一行
+      if (this._processedData.length > 0) {
+        const lastRow = this._processedData[this._processedData.length - 1];
+        lastRow[col] = colTotal;
+      }
+    }
+  }
+
+  /**
+   * 計算總計
+   */
+  private _calculateGrandTotal(): void {
+    // 實現總計計算邏輯
+    if (this._processedData.length === 0) return;
+    
+    let grandTotal = 0;
+    for (const row of this._processedData) {
+      for (const value of row) {
+        if (typeof value === 'number') {
+          grandTotal += value;
+        }
+      }
+    }
+    
+    // 將總計添加到最後一行的最後一列
+    if (this._processedData.length > 0) {
+      const lastRow = this._processedData[this._processedData.length - 1];
+      lastRow.push(grandTotal);
+    }
+  }
+
+  /**
+   * 清除目標工作表
+   */
+  private _clearTargetWorksheet(): void {
+    // 實現清除目標工作表的邏輯
+    // 這裡可以清除指定範圍的儲存格
+  }
+
+  /**
+   * 寫入 Pivot Table 資料
+   */
+  private _writePivotData(): void {
+    // 實現寫入 Pivot Table 資料的邏輯
+    // 這裡可以將處理後的資料寫入工作表
+  }
+
+  /**
+   * 應用 Pivot Table 樣式
+   */
+  private _applyPivotStyles(): void {
+    // 實現應用 Pivot Table 樣式的邏輯
+    // 這裡可以應用表格樣式、邊框等
   }
 
   /**
