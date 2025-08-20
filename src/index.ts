@@ -36,6 +36,10 @@ export interface CellOptions {
   };
   mergeRange?: string; // 用於標記儲存格是否為合併儲存格的主儲存格
   mergedInto?: string; // 用於標記儲存格是否被合併到某個範圍
+  
+  // Phase 3: 公式支援
+  formula?: string; // Excel 公式，例如 "=SUM(A1:A10)"
+  formulaType?: 'array' | 'shared' | 'dataTable'; // 公式類型
 }
 
 export interface Cell {
@@ -66,6 +70,12 @@ export interface Worksheet {
   freezePanes(row?: number, column?: number): void;
   unfreezePanes(): void;
   getFreezePanes(): { row?: number; column?: number };
+  
+  // Phase 3: 公式支援
+  setFormula(address: string, formula: string, options?: CellOptions): Cell;
+  getFormula(address: string): string | null;
+  validateFormula(formula: string): boolean;
+  getFormulaDependencies(address: string): string[];
 }
 
 export interface Workbook {
@@ -317,6 +327,38 @@ class WorksheetImpl implements Worksheet {
 
   getFreezePanes(): { row?: number; column?: number } {
     return { row: this._freezeRow, column: this._freezeCol };
+  }
+
+  // Phase 3: 公式支援
+  setFormula(address: string, formula: string, options: CellOptions = {}): CellModel {
+    const cell = this.getCell(address);
+    cell.options.formula = formula;
+    cell.options.formulaType = 'shared'; // Default to shared formula
+    cell.options.numFmt = 'General'; // Default number format for formulas
+    cell.options.font = { bold: true }; // Bold font for formulas
+    cell.options.alignment = { horizontal: 'center', vertical: 'middle' }; // Center alignment for formulas
+    cell.options.border = { style: 'thin', color: 'black' }; // Thin border for formulas
+    cell.options.fill = { type: 'pattern', patternType: 'solid', fgColor: '#FFFF00' }; // Yellow fill for formulas
+    return cell;
+  }
+
+  getFormula(address: string): string | null {
+    const cell = this.getCell(address);
+    return cell.options.formula || null;
+  }
+
+  validateFormula(formula: string): boolean {
+    // This is a placeholder. In a real implementation, you would parse the formula
+    // and check for syntax errors, circular dependencies, etc.
+    // For now, we'll just return true.
+    return true;
+  }
+
+  getFormulaDependencies(address: string): string[] {
+    // This is a placeholder. In a real implementation, you would analyze the formula
+    // and return a list of cell addresses it depends on.
+    // For now, we'll return an empty array.
+    return [];
   }
 
   private _rangesOverlap(range1: string, range2: string): boolean {
@@ -628,7 +670,10 @@ function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, num
       const styleId = (workbook as any)._getStyleIndex(cell.options);
       const styleAttr = styleId > 0 ? ` s="${styleId}"` : "";
       
-      parts.push(`<c r="${raddr}"${tAttr}${styleAttr}><v>${v}</v></c>`);
+      // Phase 3: 公式支援
+      const formulaAttr = cell.options.formula ? ` f="${cell.options.formula}"` : "";
+      
+      parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}><v>${v}</v></c>`);
     }
     parts.push("</row>");
   }
@@ -651,6 +696,13 @@ function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, num
 
 function buildCellValue(cell: CellModel, sstMap: Map<string, number>): { t: string | null; v: string } {
   const val = cell.value;
+  
+  // Phase 3: 公式支援
+  if (cell.options.formula) {
+    // 如果有公式，優先使用公式
+    return { t: null, v: "" }; // 公式儲存格不需要值，Excel 會自動計算
+  }
+  
   if (val === null || val === undefined) return { t: null, v: "" };
   if (typeof val === "number") return { t: "n", v: String(val) };
   if (typeof val === "boolean") return { t: "b", v: val ? "1" : "0" };
