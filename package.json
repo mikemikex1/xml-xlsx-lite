@@ -1,6 +1,6 @@
 {
   "name": "xml-xlsx-lite",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Minimal XLSX writer using raw XML + JSZip, inspired by exceljs API",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
