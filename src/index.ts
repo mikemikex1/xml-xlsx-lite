@@ -34,6 +34,8 @@ export interface CellOptions {
     bottom?: { style?: string; color?: string };
     right?: { style?: string; color?: string };
   };
+  mergeRange?: string; // 用於標記儲存格是否為合併儲存格的主儲存格
+  mergedInto?: string; // 用於標記儲存格是否被合併到某個範圍
 }
 
 export interface Cell {
@@ -48,6 +50,22 @@ export interface Worksheet {
   getCell(address: string): Cell;
   setCell(address: string, value: number | string | boolean | Date | null, options?: CellOptions): Cell;
   rows(): Generator<[number, Map<number, Cell>]>;
+  
+  // Phase 3: 進階功能
+  mergeCells(range: string): void;
+  unmergeCells(range: string): void;
+  getMergedRanges(): string[];
+  
+  // 欄寬/列高設定
+  setColumnWidth(column: string | number, width: number): void;
+  getColumnWidth(column: string | number): number;
+  setRowHeight(row: number, height: number): void;
+  getRowHeight(row: number): number;
+  
+  // 凍結窗格
+  freezePanes(row?: number, column?: number): void;
+  unfreezePanes(): void;
+  getFreezePanes(): { row?: number; column?: number };
 }
 
 export interface Workbook {
@@ -120,55 +138,198 @@ class CellModel implements Cell {
 /*** Worksheet Model ***/
 class WorksheetImpl implements Worksheet {
   name: string;
-  private _grid: Map<number, Map<number, CellModel>>;
-  private _maxRow: number;
-  private _maxCol: number;
+  private _cells = new Map<string, CellModel>();
+  private _maxRow = 0;
+  private _maxCol = 0;
+  
+  // Phase 3: 合併儲存格管理
+  private _mergedRanges = new Set<string>();
+
+  // Phase 3: 欄寬/列高設定
+  private _columnWidths: Map<number, number> | undefined;
+  private _rowHeights: Map<number, number> | undefined;
+
+  // 凍結窗格
+  private _freezeRow: number | undefined;
+  private _freezeCol: number | undefined;
 
   constructor(name: string) {
     this.name = name;
-    // row -> (col -> CellModel)
-    this._grid = new Map();
-    this._maxRow = 0;
-    this._maxCol = 0;
   }
 
-  /** exceljs-like */
-  getCell(address: string): Cell {
-    const { row, col } = parseAddress(address);
-    return this._ensureCell(row, col);
+  getCell(address: string): CellModel {
+    if (!this._cells.has(address)) {
+      const cell = new CellModel(address);
+      this._cells.set(address, cell);
+      
+      // 更新最大行列
+      const { row, col } = parseAddress(address);
+      this._maxRow = Math.max(this._maxRow, row);
+      this._maxCol = Math.max(this._maxCol, col);
+    }
+    return this._cells.get(address)!;
   }
 
-  /** exceljs-like */
-  setCell(address: string, value: number | string | boolean | Date | null, options: CellOptions = {}): Cell {
+  setCell(address: string, value: number | string | boolean | Date | null, options: CellOptions = {}): CellModel {
     const cell = this.getCell(address);
     cell.value = value;
-    cell.type = inferCellType(value);
+    cell.type = getCellType(value);
     cell.options = { ...cell.options, ...options };
+    
+    // 更新最大行列
+    const { row, col } = parseAddress(address);
+    this._maxRow = Math.max(this._maxRow, row);
+    this._maxCol = Math.max(this._maxCol, col);
+    
     return cell;
   }
 
-  private _ensureCell(row: number, col: number): CellModel {
-    if (!this._grid.has(row)) this._grid.set(row, new Map());
-    const rowMap = this._grid.get(row)!;
-    if (!rowMap.has(col)) {
-      const address = addrFromRC(row, col);
-      rowMap.set(col, new CellModel(address));
-      if (row > this._maxRow) this._maxRow = row;
-      if (col > this._maxCol) this._maxCol = col;
+  *rows(): Generator<[number, Map<number, CellModel>]> {
+    const rowMap = new Map<number, Map<number, CellModel>>();
+    
+    // 按行分組儲存格
+    for (const [addr, cell] of this._cells) {
+      const { row, col } = parseAddress(addr);
+      if (!rowMap.has(row)) rowMap.set(row, new Map());
+      rowMap.get(row)!.set(col, cell);
     }
-    return rowMap.get(col)!;
+    
+    // 按行號排序
+    const sortedRows = Array.from(rowMap.keys()).sort((a, b) => a - b);
+    for (const row of sortedRows) {
+      yield [row, rowMap.get(row)!];
+    }
   }
 
-  /** Iterate rows ascending */
-  *rows(): Generator<[number, Map<number, Cell>]> {
-    const rows = Array.from(this._grid.keys()).sort((a, b) => a - b);
-    for (const r of rows) {
-      yield [r, this._grid.get(r)!];
+  // Phase 3: 合併儲存格實現
+  mergeCells(range: string): void {
+    // 驗證範圍格式 (例如: "A1:B3")
+    if (!/^[A-Z]+\d+:[A-Z]+\d+$/.test(range)) {
+      throw new Error(`Invalid range format: ${range}. Expected format: A1:B3`);
     }
+    
+    const [start, end] = range.split(':');
+    const startAddr = parseAddress(start);
+    const endAddr = parseAddress(end);
+    
+    // 確保起始位置在結束位置之前
+    if (startAddr.row > endAddr.row || startAddr.col > endAddr.col) {
+      throw new Error(`Invalid range: start position must be before end position`);
+    }
+    
+    // 檢查是否與現有合併範圍重疊
+    for (const existingRange of this._mergedRanges) {
+      if (this._rangesOverlap(range, existingRange)) {
+        throw new Error(`Range ${range} overlaps with existing merged range ${existingRange}`);
+      }
+    }
+    
+    // 添加合併範圍
+    this._mergedRanges.add(range);
+    
+    // 將主儲存格設為左上角儲存格
+    const mainCell = this.getCell(start);
+    mainCell.options.mergeRange = range;
+    
+    // 清除其他儲存格的值（除了主儲存格）
+    for (let row = startAddr.row; row <= endAddr.row; row++) {
+      for (let col = startAddr.col; col <= endAddr.col; col++) {
+        if (row === startAddr.row && col === startAddr.col) continue;
+        
+        const addr = addrFromRC(row, col);
+        const cell = this.getCell(addr);
+        cell.value = null;
+        cell.options.mergedInto = range;
+      }
+    }
+  }
+
+  unmergeCells(range: string): void {
+    if (!this._mergedRanges.has(range)) {
+      throw new Error(`Range ${range} is not merged`);
+    }
+    
+    // 移除合併範圍
+    this._mergedRanges.delete(range);
+    
+    const [start, end] = range.split(':');
+    const startAddr = parseAddress(start);
+    const endAddr = parseAddress(end);
+    
+    // 清除合併相關的選項
+    for (let row = startAddr.row; row <= endAddr.row; row++) {
+      for (let col = startAddr.col; col <= endAddr.col; col++) {
+        const addr = addrFromRC(row, col);
+        if (this._cells.has(addr)) {
+          const cell = this._cells.get(addr)!;
+          delete cell.options.mergeRange;
+          delete cell.options.mergedInto;
+        }
+      }
+    }
+  }
+
+  getMergedRanges(): string[] {
+    return Array.from(this._mergedRanges).sort();
+  }
+
+  // Phase 3: 欄寬/列高設定
+  setColumnWidth(column: string | number, width: number): void {
+    const colNum = typeof column === 'string' ? colToNumber(column) : column;
+    if (width < 0) {
+      throw new Error(`Column width cannot be negative: ${width}`);
+    }
+    
+    if (!this._columnWidths) this._columnWidths = new Map();
+    this._columnWidths.set(colNum, width);
+  }
+
+  getColumnWidth(column: string | number): number {
+    const colNum = typeof column === 'string' ? colToNumber(column) : column;
+    if (!this._columnWidths) return 8.43; // Excel 預設欄寬
+    return this._columnWidths.get(colNum) || 8.43;
+  }
+
+  setRowHeight(row: number, height: number): void {
+    if (height < 0) {
+      throw new Error(`Row height cannot be negative: ${height}`);
+    }
+    
+    if (!this._rowHeights) this._rowHeights = new Map();
+    this._rowHeights.set(row, height);
+  }
+
+  getRowHeight(row: number): number {
+    if (!this._rowHeights) return 15; // Excel 預設列高
+    return this._rowHeights.get(row) || 15;
+  }
+
+  // 凍結窗格
+  freezePanes(row?: number, column?: number): void {
+    this._freezeRow = row;
+    this._freezeCol = column;
+  }
+
+  unfreezePanes(): void {
+    this._freezeRow = undefined;
+    this._freezeCol = undefined;
+  }
+
+  getFreezePanes(): { row?: number; column?: number } {
+    return { row: this._freezeRow, column: this._freezeCol };
+  }
+
+  private _rangesOverlap(range1: string, range2: string): boolean {
+    const [start1, end1] = range1.split(':').map(parseAddress);
+    const [start2, end2] = range2.split(':').map(parseAddress);
+    
+    // 檢查是否有重疊
+    return !(end1.row < start2.row || start1.row > end2.row ||
+             end1.col < start2.col || start1.col > end2.col);
   }
 }
 
-function inferCellType(value: any): 'n' | 's' | 'b' | 'd' | null {
+function getCellType(value: any): 'n' | 's' | 'b' | 'd' | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "number") return "n";
   if (typeof value === "boolean") return "b";
@@ -421,10 +582,40 @@ function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, num
     parts.push(`<dimension ref="${dim}"/>`);
   }
 
+  // Phase 3: 欄寬設定
+  if ((ws as any)._columnWidths && (ws as any)._columnWidths.size > 0) {
+    parts.push('<cols>');
+    const cols = Array.from((ws as any)._columnWidths.entries() as Iterable<[number, number]>).sort((a, b) => a[0] - b[0]);
+    for (const [colNum, width] of cols) {
+      parts.push(`<col min="${colNum}" max="${colNum}" width="${width}" customWidth="1"/>`);
+    }
+    parts.push('</cols>');
+  }
+
+  // Phase 3: 凍結窗格
+  const freezePanes = (ws as any).getFreezePanes();
+  if (freezePanes.row || freezePanes.column) {
+    parts.push('<sheetViews>');
+    parts.push('<sheetView workbookViewId="0">');
+    if (freezePanes.row || freezePanes.column) {
+      const topLeftCell = addrFromRC(
+        (freezePanes.row || 1) + 1,
+        (freezePanes.column || 1) + 1
+      );
+      parts.push(`<pane xSplit="${freezePanes.column || 0}" ySplit="${freezePanes.row || 0}" topLeftCell="${topLeftCell}" state="frozen"/>`);
+    }
+    parts.push('</sheetView>');
+    parts.push('</sheetViews>');
+  }
+
   parts.push("<sheetData>");
 
   for (const [r, rowMap] of ws.rows()) {
-    parts.push(`<row r="${r}">`);
+    // Phase 3: 列高設定
+    const rowHeight = (ws as any).getRowHeight(r);
+    const rowHeightAttr = rowHeight !== 15 ? ` ht="${rowHeight}" customHeight="1"` : '';
+    
+    parts.push(`<row r="${r}"${rowHeightAttr}>`);
     // cells sorted by col
     const cols = Array.from(rowMap.keys()).sort((a, b) => a - b);
     for (const c of cols) {
@@ -443,6 +634,17 @@ function buildSheetXml(ws: WorksheetImpl, index: number, sstMap: Map<string, num
   }
 
   parts.push("</sheetData>");
+
+  // Phase 3: 合併儲存格
+  const mergedRanges = (ws as any).getMergedRanges();
+  if (mergedRanges.length > 0) {
+    parts.push('<mergeCells count="' + mergedRanges.length + '">');
+    for (const range of mergedRanges) {
+      parts.push(`<mergeCell ref="${range}"/>`);
+    }
+    parts.push('</mergeCells>');
+  }
+
   parts.push("</worksheet>");
   return parts.join("");
 }
@@ -618,7 +820,7 @@ function buildStylesXml(workbook: WorkbookImpl): string {
         if (style.alignment.horizontal) alignParts.push(`horizontal="${style.alignment.horizontal}"`);
         if (style.alignment.vertical) alignParts.push(`vertical="${style.alignment.vertical}"`);
         if (style.alignment.wrapText) alignParts.push('wrapText="1"');
-        if (style.alignment.indent) alignParts.push(`indent="${style.indent}"`);
+        if (style.alignment.indent) alignParts.push(`indent="${style.alignment.indent}"`);
         if (style.alignment.rotation) alignParts.push(`textRotation="${style.alignment.rotation}"`);
         alignParts.push('/>');
         xfParts.push(alignParts.join(' '));
