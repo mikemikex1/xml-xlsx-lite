@@ -611,6 +611,202 @@ export class WorkbookImpl implements Workbook {
     return this._protection.getProtectionOptions();
   }
 
+  /**
+   * 生成 Pivot Table 相關的 XML 檔案
+   */
+  generatePivotTableFiles(): {
+    pivotCacheXml: string;
+    pivotTableXml: string;
+    pivotTableRelsXml: string;
+    cacheId: number;
+    tableId: number;
+  }[] {
+    const results = [];
+    
+    for (const pivotTable of this._pivotTables.values()) {
+      if (pivotTable instanceof PivotTableImpl) {
+        const cacheXml = pivotTable.generatePivotCacheXml();
+        const tableXml = pivotTable.generatePivotTableXml();
+        const relsXml = pivotTable.generatePivotTableRelsXml();
+        
+        results.push({
+          pivotCacheXml: cacheXml,
+          pivotTableXml: tableXml,
+          pivotTableRelsXml: relsXml,
+          cacheId: pivotTable.getCacheId(),
+          tableId: pivotTable.getTableId()
+        });
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * 生成包含 Pivot Table 的完整 Excel 檔案
+   */
+  async writeBufferWithPivotTables(): Promise<ArrayBuffer> {
+    const zip = new JSZip();
+    
+    // 添加基本檔案
+    await this._addBasicFiles(zip);
+    
+    // 添加 Pivot Table 檔案
+    await this._addPivotTableFiles(zip);
+    
+    return await zip.generateAsync({ type: 'arraybuffer' });
+  }
+
+  /**
+   * 添加 Pivot Table 相關檔案到 ZIP
+   */
+  private async _addPivotTableFiles(zip: JSZip): Promise<void> {
+    const pivotFiles = this.generatePivotTableFiles();
+    
+    if (pivotFiles.length === 0) return;
+    
+    // 創建 pivotCache 目錄
+    const pivotCacheFolder = zip.folder('xl/pivotCache');
+    if (pivotCacheFolder) {
+      for (const file of pivotFiles) {
+        pivotCacheFolder.file(
+          `pivotCacheDefinition${file.cacheId}.xml`,
+          file.pivotCacheXml
+        );
+      }
+    }
+    
+    // 創建 pivotTables 目錄
+    const pivotTablesFolder = zip.folder('xl/pivotTables');
+    if (pivotTablesFolder) {
+      for (const file of pivotFiles) {
+        pivotTablesFolder.file(
+          `pivotTable${file.tableId}.xml`,
+          file.pivotTableXml
+        );
+      }
+    }
+    
+    // 創建 _rels 目錄
+    const pivotTableRelsFolder = zip.folder('xl/pivotTables/_rels');
+    if (pivotTableRelsFolder) {
+      for (const file of pivotFiles) {
+        pivotTableRelsFolder.file(
+          `pivotTable${file.tableId}.xml.rels`,
+          file.pivotTableRelsXml
+        );
+      }
+    }
+    
+    // 更新 [Content_Types].xml
+    await this._updateContentTypesForPivotTables(zip, pivotFiles);
+    
+    // 更新 workbook.xml.rels
+    await this._updateWorkbookRelsForPivotTables(zip, pivotFiles);
+  }
+
+  /**
+   * 更新 Content Types 以包含 Pivot Table 檔案
+   */
+  private async _updateContentTypesForPivotTables(zip: JSZip, pivotFiles: any[]): Promise<void> {
+    let contentTypesXml = await this._getContentTypesXml();
+    
+    // 添加 PivotCache 類型
+    for (const file of pivotFiles) {
+      contentTypesXml = contentTypesXml.replace(
+        '</Types>',
+        `  <Override PartName="/xl/pivotCache/pivotCacheDefinition${file.cacheId}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml"/>
+</Types>`
+      );
+    }
+    
+    // 添加 PivotTable 類型
+    for (const file of pivotFiles) {
+      contentTypesXml = contentTypesXml.replace(
+        '</Types>',
+        `  <Override PartName="/xl/pivotTables/pivotTable${file.tableId}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml"/>
+</Types>`
+      );
+    }
+    
+    zip.file('[Content_Types].xml', contentTypesXml);
+  }
+
+  /**
+   * 更新 Workbook 關聯以包含 Pivot Table 檔案
+   */
+  private async _updateWorkbookRelsForPivotTables(zip: JSZip, pivotFiles: any[]): Promise<void> {
+    let workbookRelsXml = await this._getWorkbookRelsXml();
+    
+    // 添加 PivotCache 關聯
+    for (const file of pivotFiles) {
+      workbookRelsXml = workbookRelsXml.replace(
+        '</Relationships>',
+        `  <Relationship Id="rId${this._generateRelId()}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition" Target="pivotCache/pivotCacheDefinition${file.cacheId}.xml"/>
+</Relationships>`
+      );
+    }
+    
+    zip.file('xl/_rels/workbook.xml.rels', workbookRelsXml);
+  }
+
+  /**
+   * 取得 Content Types XML
+   */
+  private async _getContentTypesXml(): Promise<string> {
+    return buildContentTypes(this._sheets.length, true, true);
+  }
+
+  /**
+   * 取得 Workbook 關聯 XML
+   */
+  private async _getWorkbookRelsXml(): Promise<string> {
+    return buildRootRels();
+  }
+
+  /**
+   * 生成關聯 ID
+   */
+  private _generateRelId(): number {
+    return Math.floor(Math.random() * 1000000) + 1;
+  }
+
+  /**
+   * 添加基本檔案到 ZIP
+   */
+  private async _addBasicFiles(zip: JSZip): Promise<void> {
+    // 添加 [Content_Types].xml
+    zip.file('[Content_Types].xml', buildContentTypes(this._sheets.length, true, true));
+    
+    // 添加 _rels/.rels
+    zip.file('_rels/.rels', buildRootRels());
+    
+    // 添加 xl/workbook.xml
+    const { workbookXml, workbookRelsXml } = buildWorkbookXml(this._sheets);
+    zip.file('xl/workbook.xml', workbookXml);
+    zip.file('xl/_rels/workbook.xml.rels', workbookRelsXml);
+    
+    // 添加 xl/sharedStrings.xml
+    zip.file('xl/sharedStrings.xml', buildSharedStringsXml(this._sstMap, this._sstArray));
+    
+    // 添加 xl/styles.xml
+    zip.file('xl/styles.xml', buildStylesXml(this));
+    
+    // 添加工作表
+    for (let i = 0; i < this._sheets.length; i++) {
+      const sheet = this._sheets[i];
+      const sheetXml = buildSheetXml(sheet, i, this._sstMap, this);
+      zip.file(`xl/worksheets/sheet${i + 1}.xml`, sheetXml);
+      
+      // 添加工作表關聯
+      const sheetRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${i + 1}.xml"/>
+</Relationships>`;
+      zip.file(`xl/worksheets/_rels/sheet${i + 1}.xml.rels`, sheetRelsXml);
+    }
+  }
+
   // 內部方法（用於 XML 生成）
   get _sstMap(): Map<string, number> { return this._sst; }
   get _sstArray(): string[] { return this._sstArr; }

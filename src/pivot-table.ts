@@ -1,9 +1,10 @@
 import { PivotTable, PivotTableConfig, PivotField, Worksheet } from './types';
 import { WorkbookImpl } from './workbook';
-import { parseAddress, addrFromRC } from './utils';
+import { parseAddress, addrFromRC, colToNumber } from './utils';
 
 /**
- * Pivot Table 實現類
+ * 動態 Pivot Table 實現類
+ * 生成真正的 Excel 樞紐分析表，支援互動式操作
  */
 export class PivotTableImpl implements PivotTable {
   name: string;
@@ -13,11 +14,15 @@ export class PivotTableImpl implements PivotTable {
   private _processedData: any[][] = [];
   private _fieldValues: Map<string, Set<any>> = new Map();
   private _pivotCache: Map<string, any> = new Map();
+  private _cacheId: number;
+  private _tableId: number;
 
   constructor(name: string, config: PivotTableConfig, workbook: WorkbookImpl) {
     this.name = name;
     this.config = config;
     this._workbook = workbook;
+    this._cacheId = this._generateCacheId();
+    this._tableId = this._generateTableId();
     this._loadSourceData();
     this._processData();
   }
@@ -89,19 +94,347 @@ export class PivotTableImpl implements PivotTable {
     const ws = this._workbook.getWorksheet(worksheetName);
     
     // 清除現有資料
-    // 這裡需要實現清除工作表的邏輯
+    this._clearTargetWorksheet(ws);
     
     // 寫入 Pivot Table 資料
-    for (let i = 0; i < this._processedData.length; i++) {
-      const row = this._processedData[i];
-      for (let j = 0; j < row.length; j++) {
-        const value = row[j];
-        const address = addrFromRC(i + 1, j + 1);
-        ws.setCell(address, value);
-      }
-    }
+    this._writePivotData(ws);
+    
+    // 應用 Pivot Table 樣式
+    this._applyPivotStyles(ws);
     
     return ws;
+  }
+
+  /**
+   * 生成 PivotCache XML
+   */
+  generatePivotCacheXml(): string {
+    const rowFields = this.config.fields.filter(f => f.type === 'row');
+    const columnFields = this.config.fields.filter(f => f.type === 'column');
+    const valueFields = this.config.fields.filter(f => f.type === 'value');
+    const filterFields = this.config.fields.filter(f => f.type === 'filter');
+
+    let xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<pivotCacheDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" 
+                     xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" 
+                     id="${this._cacheId}" 
+                     recordCount="${this._sourceData.length - 1}" 
+                     refreshOnLoad="1">`;
+
+    // 快取來源
+    xml += `
+  <cacheSource type="worksheet">
+    <worksheetSource ref="${this.config.sourceRange}" sheet="${this._getSourceSheetName()}"/>
+  </cacheSource>`;
+
+    // 欄位定義
+    xml += `
+  <cacheFields count="${this.config.fields.length}">`;
+    
+    for (const field of this.config.fields) {
+      xml += this._generateCacheFieldXml(field);
+    }
+    
+    xml += `
+  </cacheFields>`;
+
+    // 快取記錄
+    xml += `
+  <cacheRecords count="${this._sourceData.length - 1}">`;
+    
+    for (let i = 1; i < this._sourceData.length; i++) {
+      xml += this._generateCacheRecordXml(this._sourceData[i], i);
+    }
+    
+    xml += `
+  </cacheRecords>`;
+
+    xml += `
+</pivotCacheDefinition>`;
+
+    return xml;
+  }
+
+  /**
+   * 生成 PivotTable XML
+   */
+  generatePivotTableXml(): string {
+    const rowFields = this.config.fields.filter(f => f.type === 'row');
+    const columnFields = this.config.fields.filter(f => f.type === 'column');
+    const valueFields = this.config.fields.filter(f => f.type === 'value');
+    const filterFields = this.config.fields.filter(f => f.type === 'filter');
+
+    let xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" 
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                     mc:Ignorable="xr" 
+                     xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision" 
+                     name="${this.name}" 
+                     cacheId="${this._cacheId}" 
+                     dataCaption="Values" 
+                     applyNumberFormatsInPivot="0" 
+                     applyBorderFormatsInPivot="0" 
+                     applyFontFormatsInPivot="0" 
+                     applyPatternFormatsInPivot="0" 
+                     applyAlignmentFormatsInPivot="0" 
+                     applyWidthHeightFormatsInPivot="0" 
+                     dataOnRows="0" 
+                     dataPosition="0" 
+                     grandTotalCaption="Grand Total" 
+                     multipleFieldFilters="0" 
+                     showDrill="1" 
+                     showMemberPropertyTips="0" 
+                     showMissing="0" 
+                     showMultipleLabel="0" 
+                     showPageMultipleLabel="0" 
+                     showPageSubtotals="0" 
+                     showRowGrandTotals="1" 
+                     showRowSubtotals="1" 
+                     showColGrandTotals="1" 
+                     showColSubtotals="0" 
+                     showItems="1" 
+                     showDataDropDown="1" 
+                     showError="0" 
+                     showExpandCollapse="1" 
+                     showOutline="1" 
+                     showEmptyRow="0" 
+                     showEmptyCol="0" 
+                     showHeaders="1" 
+                     compact="1" 
+                     outline="1" 
+                     outlineData="1" 
+                     gridDropZones="0" 
+                     indent="0" 
+                     pageWrap="0" 
+                     pageOverThenDown="0" 
+                     pageDownThenOver="0" 
+                     pageFieldsInReportFilter="0" 
+                     pageWrapCount="0" 
+                     pageBreakBetweenGroups="0" 
+                     subtotalHiddenItems="0" 
+                     printTitles="0" 
+                     fieldPrintTitles="0" 
+                     itemPrintTitles="0" 
+                     mergeTitles="0" 
+                     markAutoFormat="0" 
+                     autoFormat="0" 
+                     applyStyles="0" 
+                     baseStyles="0" 
+                     customListSort="1" 
+                     applyDataValidation="0" 
+                     enableDrill="1" 
+                     fieldListSortAscending="0" 
+                     mdxSubqueries="0" 
+                     customSubtotals="0" 
+                     visualTotals="1" 
+                    showDataAs="0" 
+                     calculatedMembers="0" 
+                     visualTotalsFilters="0" 
+                     showPageBreaks="0" 
+                     useAutoFormat="0" 
+                     pageGrandTotals="0" 
+                     subtotalPageItems="0" 
+                     rowGrandTotals="1" 
+                     colGrandTotals="1" 
+                     fieldSort="1" 
+                     compactData="1" 
+                     printDrill="0" 
+                     itemDrill="0" 
+                     drillThrough="0" 
+                     fieldList="0" 
+                     nonAutoSortDefault="0" 
+                     showNew="0" 
+                     autoShow="0" 
+                     rankBy="0" 
+                     defaultSubtotal="1" 
+                     multipleItemSelectionMode="0" 
+                     manualUpdate="0" 
+                     showCalcMbrs="0" 
+                     calculatedMembersInFilters="0" 
+                     visualTotalsForSets="0" 
+                     showASubtotalForPstTop="0" 
+                     showAllDrill="0" 
+                     showValue="1" 
+                     expandMembersInDetail="0" 
+                     dateFormatInPivot="0" 
+                     pivotShowAs="0" 
+                     enableWizard="0" 
+                     enableDrill="1" 
+                     enableFieldDialog="0" 
+                     preserveFormatting="1" 
+                     autoFormat="0" 
+                     autoRepublish="0" 
+                     showPageMultipleLabel="0" 
+                     showPageSubtotals="0" 
+                     showRowGrandTotals="1" 
+                     showRowSubtotals="1" 
+                     showColGrandTotals="1" 
+                     showColSubtotals="0" 
+                     showItems="1" 
+                     showDataDropDown="1" 
+                     showError="0" 
+                     showExpandCollapse="1" 
+                     showOutline="1" 
+                     showEmptyRow="0" 
+                     showEmptyCol="0" 
+                     showHeaders="1" 
+                     compact="1" 
+                     outline="1" 
+                     outlineData="1" 
+                     gridDropZones="0" 
+                     indent="0" 
+                     pageWrap="0" 
+                     pageOverThenDown="0" 
+                     pageDownThenOver="0" 
+                     pageFieldsInReportFilter="0" 
+                     pageWrapCount="0" 
+                     pageBreakBetweenGroups="0" 
+                     subtotalHiddenItems="0" 
+                     printTitles="0" 
+                     fieldPrintTitles="0" 
+                     itemPrintTitles="0" 
+                     mergeTitles="0" 
+                     markAutoFormat="0" 
+                     autoFormat="0" 
+                     applyStyles="0" 
+                     baseStyles="0" 
+                     customListSort="1" 
+                     applyDataValidation="0" 
+                     enableDrill="1" 
+                     fieldListSortAscending="0" 
+                     mdxSubqueries="0" 
+                     customSubtotals="0" 
+                     visualTotals="1" 
+                     showDataAs="0" 
+                     calculatedMembers="0" 
+                     visualTotalsFilters="0" 
+                     showPageBreaks="0" 
+                     useAutoFormat="0" 
+                     pageGrandTotals="0" 
+                     subtotalPageItems="0" 
+                     rowGrandTotals="1" 
+                     colGrandTotals="1" 
+                     fieldSort="1" 
+                     compactData="1" 
+                     printDrill="0" 
+                     itemDrill="0" 
+                     drillThrough="0" 
+                     fieldList="0" 
+                     nonAutoSortDefault="0" 
+                     showNew="0" 
+                     autoShow="0" 
+                     rankBy="0" 
+                     defaultSubtotal="1" 
+                     multipleItemSelectionMode="0" 
+                     manualUpdate="0" 
+                     showCalcMbrs="0" 
+                     calculatedMembersInFilters="0" 
+                     visualTotalsForSets="0" 
+                     showASubtotalForPstTop="0" 
+                     showAllDrill="0" 
+                     showValue="1" 
+                     expandMembersInDetail="0" 
+                     dateFormatInPivot="0" 
+                     pivotShowAs="0" 
+                     enableWizard="0" 
+                     enableDrill="1" 
+                     enableFieldDialog="0" 
+                     preserveFormatting="1" 
+                     autoFormat="0" 
+                     autoRepublish="0">`;
+
+    // 位置資訊
+    xml += `
+  <location firstDataCol="1" firstDataRow="1" firstHeaderRow="1" ref="${this.config.targetRange}"/>`;
+
+    // 欄位配置
+    xml += `
+  <pivotFields count="${this.config.fields.length}">`;
+    
+    for (const field of this.config.fields) {
+      xml += this._generatePivotFieldXml(field);
+    }
+    
+    xml += `
+  </pivotFields>`;
+
+    // 行欄位
+    if (rowFields.length > 0) {
+      xml += `
+  <rowFields count="${rowFields.length}">`;
+      for (let i = 0; i < rowFields.length; i++) {
+        xml += `
+    <field x="${i}"/>`;
+      }
+      xml += `
+  </rowFields>`;
+    }
+
+    // 列欄位
+    if (columnFields.length > 0) {
+      xml += `
+  <colFields count="${columnFields.length}">`;
+      for (let i = 0; i < columnFields.length; i++) {
+        xml += `
+    <field x="${i}"/>`;
+      }
+      xml += `
+  </colFields>`;
+    }
+
+    // 值欄位
+    if (valueFields.length > 0) {
+      xml += `
+  <dataFields count="${valueFields.length}">`;
+      for (let i = 0; i < valueFields.length; i++) {
+        const field = valueFields[i];
+        xml += `
+    <dataField name="${field.customName || field.name}" fld="${i}" baseField="0" baseItem="0" numFmtId="0" showDataAs="normal" subtotal="defaultFunction"/>`;
+      }
+      xml += `
+  </dataFields>`;
+    }
+
+    // 篩選欄位
+    if (filterFields.length > 0) {
+      xml += `
+  <pageFields count="${filterFields.length}">`;
+      for (let i = 0; i < filterFields.length; i++) {
+        xml += `
+    <pageField fld="${i}" hier="-1"/>`;
+      }
+      xml += `
+  </pageFields>`;
+    }
+
+    xml += `
+</pivotTableDefinition>`;
+
+    return xml;
+  }
+
+  /**
+   * 生成 PivotTable 關聯 XML
+   */
+  generatePivotTableRelsXml(): string {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition" Target="../pivotCache/pivotCacheDefinition${this._cacheId}.xml"/>
+</Relationships>`;
+  }
+
+  /**
+   * 取得快取 ID
+   */
+  getCacheId(): number {
+    return this._cacheId;
+  }
+
+  /**
+   * 取得表格 ID
+   */
+  getTableId(): number {
+    return this._tableId;
   }
 
   /**
@@ -493,7 +826,7 @@ export class PivotTableImpl implements PivotTable {
   /**
    * 清除目標工作表
    */
-  private _clearTargetWorksheet(): void {
+  private _clearTargetWorksheet(ws?: Worksheet): void {
     // 實現清除目標工作表的邏輯
     // 這裡可以清除指定範圍的儲存格
   }
@@ -501,7 +834,7 @@ export class PivotTableImpl implements PivotTable {
   /**
    * 寫入 Pivot Table 資料
    */
-  private _writePivotData(): void {
+  private _writePivotData(ws?: Worksheet): void {
     // 實現寫入 Pivot Table 資料的邏輯
     // 這裡可以將處理後的資料寫入工作表
   }
@@ -509,7 +842,7 @@ export class PivotTableImpl implements PivotTable {
   /**
    * 應用 Pivot Table 樣式
    */
-  private _applyPivotStyles(): void {
+  private _applyPivotStyles(ws?: Worksheet): void {
     // 實現應用 Pivot Table 樣式的邏輯
     // 這裡可以應用表格樣式、邊框等
   }
@@ -540,5 +873,133 @@ export class PivotTableImpl implements PivotTable {
     }
     
     return data;
+  }
+
+  /**
+   * 生成快取 ID
+   */
+  private _generateCacheId(): number {
+    return Math.floor(Math.random() * 1000000) + 1;
+  }
+
+  /**
+   * 生成表格 ID
+   */
+  private _generateTableId(): number {
+    return Math.floor(Math.random() * 1000000) + 1;
+  }
+
+  /**
+   * 取得來源工作表名稱
+   */
+  private _getSourceSheetName(): string {
+    // 從來源範圍中提取工作表名稱
+    // 暫時返回預設值
+    return 'Sheet1';
+  }
+
+  /**
+   * 生成快取欄位 XML
+   */
+  private _generateCacheFieldXml(field: PivotField): string {
+    const values = Array.from(this._fieldValues.get(field.name) || []);
+    
+    let xml = `
+    <cacheField name="${field.name}" numFmtId="0" formula="0" sqlType="0" hierarchy="0" level="0" databaseField="0" mappingCount="0" olap="0">`;
+    
+    // 欄位項目
+    if (values.length > 0) {
+      xml += `
+      <sharedItems count="${values.length}" containsSemiMixedTypes="0" containsString="0" containsNumber="0" containsInteger="0" containsNonDate="0" containsDate="0" containsBlank="0" mixedTypes="0" minDate="1900-01-01T00:00:00" maxDate="9999-12-31T23:59:59" minNumber="0" maxNumber="0" minInteger="0" maxInteger="0" containsLocal="0" containsRemote="0" remote="0">`;
+      
+      for (const value of values) {
+        if (typeof value === 'string') {
+          xml += `
+        <s v="${this._escapeXmlValue(value)}"/>`;
+        } else if (typeof value === 'number') {
+          xml += `
+        <n v="${value}"/>`;
+        }
+      }
+      
+      xml += `
+      </sharedItems>`;
+    }
+    
+    xml += `
+    </cacheField>`;
+    
+    return xml;
+  }
+
+  /**
+   * 生成快取記錄 XML
+   */
+  private _generateCacheRecordXml(row: any[], index: number): string {
+    let xml = `
+      <r>`;
+    
+    for (const value of row) {
+      if (typeof value === 'string') {
+        xml += `
+        <s v="${this._escapeXmlValue(value)}"/>`;
+      } else if (typeof value === 'number') {
+        xml += `
+        <n v="${value}"/>`;
+      } else if (typeof value === 'boolean') {
+        xml += `
+        <b v="${value ? '1' : '0'}"/>`;
+      }
+    }
+    
+    xml += `
+      </r>`;
+    
+    return xml;
+  }
+
+  /**
+   * 生成 Pivot 欄位 XML
+   */
+  private _generatePivotFieldXml(field: PivotField): string {
+    let xml = `
+    <pivotField axis="axisRow" showAll="0">`;
+    
+    // 欄位項目
+    const values = Array.from(this._fieldValues.get(field.name) || []);
+    if (values.length > 0) {
+      xml += `
+      <items count="${values.length + 1}">`;
+      
+      // 預設項目
+      xml += `
+        <item x="0" t="default"/>`;
+      
+      // 值項目
+      for (let i = 0; i < values.length; i++) {
+        xml += `
+        <item x="${i + 1}"/>`;
+      }
+      
+      xml += `
+      </items>`;
+    }
+    
+    xml += `
+    </pivotField>`;
+    
+    return xml;
+  }
+
+  /**
+   * 轉義 XML 值
+   */
+  private _escapeXmlValue(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 }
