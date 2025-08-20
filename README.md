@@ -152,6 +152,67 @@ console.log('A 欄寬度:', ws.getColumnWidth('A'));
 console.log('第 1 列高度:', ws.getRowHeight(1));
 ```
 
+### 🚀 **Phase 4: 效能優化**
+
+#### **記憶體使用優化**
+- 大型檔案處理（支援數十萬儲存格）
+- 記憶體洩漏防護
+- 自動記憶體回收
+- 物件池化優化
+
+#### **大型檔案處理**
+- 分塊處理（可配置分塊大小）
+- 虛擬化儲存格存取
+- 延遲載入機制
+- 智慧記憶體管理
+
+#### **串流處理支援**
+- 串流寫入 Excel 檔案
+- 分塊串流處理
+- 記憶體效率優化
+- 支援大型資料集
+
+#### **快取機制**
+- 樣式快取（自動去重）
+- 字串快取（共享字串優化）
+- 計算結果快取
+- 智慧快取管理（LRU 策略）
+
+#### **效能優化範例**
+
+```javascript
+const { Workbook } = require('xml-xlsx-lite');
+
+// 建立具有效能優化選項的工作簿
+const wb = new Workbook({
+  memoryOptimization: true,    // 啟用記憶體優化
+  chunkSize: 1000,            // 分塊處理大小
+  cacheEnabled: true,          // 啟用快取
+  maxCacheSize: 10000         // 快取大小限制
+});
+
+// 處理大型資料集
+const largeDataset = generateLargeData(100000); // 10萬筆資料
+await wb.addLargeDataset('大型資料', largeDataset, {
+  startRow: 2,
+  startCol: 1,
+  chunkSize: 500
+});
+
+// 串流寫入（節省記憶體）
+await wb.writeStream(async (chunk) => {
+  await writeToFile(chunk);
+});
+
+// 記憶體統計
+const stats = wb.getMemoryStats();
+console.log(`記憶體使用: ${(stats.memoryUsage / 1024 / 1024).toFixed(2)} MB`);
+console.log(`總儲存格: ${stats.totalCells.toLocaleString()}`);
+
+// 強制記憶體回收
+wb.forceGarbageCollection();
+```
+
 ### Multiple Worksheets
 
 ```javascript
