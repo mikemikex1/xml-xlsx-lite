@@ -203,9 +203,11 @@ export interface Chart {
 // Phase 4: 效能優化
 export interface Workbook {
   getWorksheet(nameOrIndex: string | number): Worksheet;
+  getWorksheets(): Worksheet[];
   getCell(worksheet: string | Worksheet, address: string): Cell;
   setCell(worksheet: string | Worksheet, address: string, value: number | string | boolean | Date | null, options?: CellOptions): Cell;
   writeBuffer(): Promise<ArrayBuffer>;
+  writeFile(filename: string): Promise<void>;
   
   // Phase 4: 效能優化
   writeStream(writeStream: (chunk: Uint8Array) => Promise<void>): Promise<void>;

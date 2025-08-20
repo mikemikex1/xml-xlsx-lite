@@ -158,6 +158,10 @@ export class WorkbookImpl implements Workbook {
     return ws;
   }
 
+  getWorksheets(): Worksheet[] {
+    return [...this._sheets];
+  }
+
   /** Convenience passthroughs */
   getCell(worksheet: string | Worksheet, address: string): Cell {
     const ws = typeof worksheet === "string" ? this.getWorksheet(worksheet) : worksheet;
@@ -203,6 +207,19 @@ export class WorkbookImpl implements Workbook {
 
     // Generate and return ArrayBuffer
     return await zip.generateAsync({ type: "arraybuffer", compression: "DEFLATE" });
+  }
+
+  /** Write .xlsx file to disk */
+  async writeFile(filename: string): Promise<void> {
+    const buffer = await this.writeBuffer();
+    
+    if (typeof window !== 'undefined') {
+      // 瀏覽器環境，不支援檔案寫入
+      throw new Error('writeFile is not supported in browser environment. Use writeBuffer() instead.');
+    }
+    
+    // 在 Node.js 環境中由外部實現
+    throw new Error('writeFile method needs to be implemented externally. Use writeBuffer() and save manually.');
   }
 
   // Phase 4: 串流處理支援
