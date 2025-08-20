@@ -213,10 +213,226 @@ console.log(`總儲存格: ${stats.totalCells.toLocaleString()}`);
 wb.forceGarbageCollection();
 ```
 
+### 🎯 **Phase 5: Pivot Table 支援**
+
+#### **核心 Pivot Table 功能**
+- 資料來源管理（支援任意範圍的資料來源）
+- 欄位配置（行、列、值、篩選）
+- 彙總函數（SUM, COUNT, AVERAGE, MAX, MIN, STDDEV, VAR）
+- 分組和排序
+
+#### **進階功能**
+- 計算欄位（自定義欄位名稱和格式）
+- 篩選條件（多值篩選、動態篩選）
+- 樣式設定（自動格式化、緊湊行、大綱資料）
+- 更新機制（自動重新整理、資料來源更新）
+
+#### **欄位管理**
+- 動態添加/移除欄位
+- 欄位重新排序
+- 篩選值管理
+- 小計和總計控制
+
+#### **Pivot Table 範例**
+
+```javascript
+const { Workbook } = require('xml-xlsx-lite');
+
+const wb = new Workbook();
+
+// 建立資料工作表
+const dataWs = wb.getWorksheet('銷售資料');
+// ... 添加資料 ...
+
+// 定義 Pivot Table 欄位
+const fields = [
+  {
+    name: '產品',
+    sourceColumn: '產品',
+    type: 'row',
+    showSubtotal: true
+  },
+  {
+    name: '地區',
+    sourceColumn: '地區',
+    type: 'column',
+    showSubtotal: true
+  },
+  {
+    name: '銷售額',
+    sourceColumn: '銷售額',
+    type: 'value',
+    function: 'sum',
+    customName: '總銷售額'
+  },
+  {
+    name: '銷售筆數',
+    sourceColumn: '銷售額',
+    type: 'value',
+    function: 'count'
+  }
+];
+
+// 建立 Pivot Table
+const pivotTable = wb.createPivotTable({
+  name: '銷售分析表',
+  sourceRange: 'A1:D1000',
+  targetRange: 'F1:J50',
+  fields: fields,
+  showGrandTotals: true,
+  autoFormat: true
+});
+
+// 應用篩選
+pivotTable.applyFilter('月份', ['1月', '2月', '3月']);
+
+// 取得資料
+const data = pivotTable.getData();
+
+// 匯出到新工作表
+pivotTable.exportToWorksheet('Pivot_Table_結果');
+```
+
 ### Multiple Worksheets
 
 ```javascript
 const wb = new Workbook();
+```
+
+## 🔒 **Phase 6: 程式碼重構和進階功能**
+
+### 功能特色
+- **程式碼重構**：將 `src/index.ts` 拆分為多個模組化檔案，提升可維護性
+- **工作表保護**：密碼保護、操作權限控制（格式化、插入/刪除、排序、篩選等）
+- **工作簿保護**：結構保護、視窗保護
+- **圖表支援**：柱狀圖、折線圖、圓餅圖、長條圖、面積圖、散佈圖、環形圖、雷達圖
+- **圖表工廠類別**：簡化圖表建立流程
+- **圖表選項和樣式設定**：標題、軸標題、大小、圖例、資料標籤、網格線、主題
+- **圖表位置和大小調整**：靈活的圖表定位和尺寸設定
+- **圖表資料系列管理**：添加、移除、更新資料系列
+
+### 使用範例
+
+#### 工作表保護
+
+```javascript
+const workbook = new Workbook();
+const sheet = workbook.addSheet('Protected Sheet');
+
+// 保護工作表
+sheet.protect('password123', {
+  selectLockedCells: false,
+  selectUnlockedCells: true,
+  formatCells: false,
+  insertRows: false,
+  deleteRows: false
+});
+
+// 檢查保護狀態
+console.log('工作表是否受保護:', sheet.isProtected());
+console.log('保護選項:', sheet.getProtectionOptions());
+
+// 解除保護
+sheet.unprotect('password123');
+```
+
+#### 工作簿保護
+
+```javascript
+// 保護工作簿
+workbook.protect('password123', {
+  structure: true,  // 防止新增/刪除工作表
+  windows: false    // 允許調整視窗大小
+});
+
+// 檢查保護狀態
+console.log('工作簿是否受保護:', workbook.isProtected());
+console.log('保護選項:', workbook.getProtectionOptions());
+
+// 解除保護
+workbook.unprotect('password123');
+```
+
+#### 圖表支援
+
+```javascript
+const workbook = new Workbook();
+const sheet = workbook.addSheet('Chart Data');
+
+// 添加資料
+sheet.setCell('A1', 'Month');
+sheet.setCell('B1', 'Sales');
+sheet.setCell('A2', 'Jan'); sheet.setCell('B2', 100);
+sheet.setCell('A3', 'Feb'); sheet.setCell('B3', 150);
+sheet.setCell('A4', 'Mar'); sheet.setCell('B4', 200);
+
+// 建立柱狀圖
+const columnChart = ChartFactory.createColumnChart(
+  'Sales Chart',
+  [{
+    series: 'Sales',
+    categories: 'A2:A4',
+    values: 'B2:B4',
+    color: '#FF6B6B'
+  }],
+  {
+    title: 'Monthly Sales',
+    xAxisTitle: 'Month',
+    yAxisTitle: 'Sales',
+    width: 500,
+    height: 300,
+    showLegend: true,
+    showDataLabels: true
+  },
+  { row: 1, col: 6 }
+);
+
+// 添加圖表到工作表
+sheet.addChart(columnChart);
+
+// 建立圓餅圖
+const pieChart = ChartFactory.createPieChart(
+  'Sales Pie',
+  [{
+    series: 'Sales',
+    categories: 'A2:A4',
+    values: 'B2:B4',
+    color: '#4ECDC4'
+  }],
+  {
+    title: 'Sales Distribution',
+    width: 400,
+    height: 300,
+    showLegend: true,
+    showDataLabels: true
+  },
+  { row: 15, col: 6 }
+);
+
+sheet.addChart(pieChart);
+
+// 匯出 Excel
+workbook.writeFile('charts-demo.xlsx');
+```
+
+#### 圖表工廠類別
+
+```javascript
+// 建立不同類型的圖表
+const lineChart = ChartFactory.createLineChart('Trend', data, options, position);
+const barChart = ChartFactory.createBarChart('Comparison', data, options, position);
+const areaChart = ChartFactory.createAreaChart('Area', data, options, position);
+const scatterChart = ChartFactory.createScatterChart('Scatter', data, options, position);
+const doughnutChart = ChartFactory.createDoughnutChart('Doughnut', data, options, position);
+const radarChart = ChartFactory.createRadarChart('Radar', data, options, position);
+
+// 圖表操作
+chart.addSeries(newSeries);
+chart.removeSeries('Series Name');
+chart.updateOptions({ title: 'New Title', width: 600 });
+chart.moveTo(10, 5);
+chart.resize(800, 400);
+```
 
 // Create multiple worksheets
 const ws1 = wb.getWorksheet("Data Sheet");
