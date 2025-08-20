@@ -396,13 +396,15 @@ function buildStylesXml(): string {
 
 /*** XML helpers ***/
 function escapeXmlText(str: any): string {
+  // 使用 replace 搭配正則表達式以支援較舊的 JavaScript 版本
   return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll("\"", "&quot;")
-    .replaceAll("'", "&apos;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
+
 
 function escapeXmlAttr(str: any): string {
   return escapeXmlText(str);
