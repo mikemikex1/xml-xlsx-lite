@@ -1,7 +1,7 @@
 {
   "name": "xml-xlsx-lite",
 
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "輕量級的 Excel XLSX 檔案生成器，支援完整的 Excel 功能，包括樞紐分析表、圖表和進階樣式。支援繁體中文和台灣地區使用。",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
