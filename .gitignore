@@ -13,6 +13,13 @@ build/
 test/output/
 test/browser/
 
+# Excel files and test outputs
+*.xlsx
+*.xls
+test-*.xlsx
+fixed-*.xlsx
+test-simple-*.xlsx
+
 # IDE
 .vscode/
 .idea/
