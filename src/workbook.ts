@@ -616,6 +616,8 @@ export class WorkbookImpl implements Workbook {
    */
   generatePivotTableFiles(): {
     pivotCacheXml: string;
+    pivotCacheRecordsXml: string;
+    pivotCacheRelsXml: string;
     pivotTableXml: string;
     pivotTableRelsXml: string;
     cacheId: number;
@@ -626,13 +628,17 @@ export class WorkbookImpl implements Workbook {
     for (const pivotTable of this._pivotTables.values()) {
       if (pivotTable instanceof PivotTableImpl) {
         const cacheXml = pivotTable.generatePivotCacheXml();
+        const cacheRecordsXml = pivotTable.generatePivotCacheRecordsXml();
+        const cacheRelsXml = pivotTable.generatePivotCacheRelsXml();
         const tableXml = pivotTable.generatePivotTableXml();
-        const relsXml = pivotTable.generatePivotTableRelsXml();
+        const tableRelsXml = pivotTable.generatePivotTableRelsXml();
         
         results.push({
           pivotCacheXml: cacheXml,
+          pivotCacheRecordsXml: cacheRecordsXml,
+          pivotCacheRelsXml: cacheRelsXml,
           pivotTableXml: tableXml,
-          pivotTableRelsXml: relsXml,
+          pivotTableRelsXml: tableRelsXml,
           cacheId: pivotTable.getCacheId(),
           tableId: pivotTable.getTableId()
         });
@@ -669,9 +675,27 @@ export class WorkbookImpl implements Workbook {
     const pivotCacheFolder = zip.folder('xl/pivotCache');
     if (pivotCacheFolder) {
       for (const file of pivotFiles) {
+        // 添加 pivotCacheDefinition XML
         pivotCacheFolder.file(
           `pivotCacheDefinition${file.cacheId}.xml`,
           file.pivotCacheXml
+        );
+        
+        // 添加 pivotCacheRecords XML
+        pivotCacheFolder.file(
+          `pivotCacheRecords${file.cacheId}.xml`,
+          file.pivotCacheRecordsXml
+        );
+      }
+    }
+    
+    // 創建 pivotCache _rels 目錄
+    const pivotCacheRelsFolder = zip.folder('xl/pivotCache/_rels');
+    if (pivotCacheRelsFolder) {
+      for (const file of pivotFiles) {
+        pivotCacheRelsFolder.file(
+          `pivotCacheDefinition${file.cacheId}.xml.rels`,
+          file.pivotCacheRelsXml
         );
       }
     }
@@ -687,7 +711,7 @@ export class WorkbookImpl implements Workbook {
       }
     }
     
-    // 創建 _rels 目錄
+    // 創建 pivotTables _rels 目錄
     const pivotTableRelsFolder = zip.folder('xl/pivotTables/_rels');
     if (pivotTableRelsFolder) {
       for (const file of pivotFiles) {
@@ -709,13 +733,24 @@ export class WorkbookImpl implements Workbook {
    * 更新 Content Types 以包含 Pivot Table 檔案
    */
   private async _updateContentTypesForPivotTables(zip: JSZip, pivotFiles: any[]): Promise<void> {
-    let contentTypesXml = await this._getContentTypesXml();
+    // 從現有的 [Content_Types].xml 開始，而不是重新生成
+    const existingContentTypes = zip.file('[Content_Types].xml');
+    let contentTypesXml = existingContentTypes ? await existingContentTypes.async('text') : await this._getContentTypesXml();
     
-    // 添加 PivotCache 類型
+    // 添加 PivotCache 定義類型
     for (const file of pivotFiles) {
       contentTypesXml = contentTypesXml.replace(
         '</Types>',
         `  <Override PartName="/xl/pivotCache/pivotCacheDefinition${file.cacheId}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml"/>
+</Types>`
+      );
+    }
+    
+    // 添加 PivotCache 記錄類型
+    for (const file of pivotFiles) {
+      contentTypesXml = contentTypesXml.replace(
+        '</Types>',
+        `  <Override PartName="/xl/pivotCache/pivotCacheRecords${file.cacheId}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheRecords+xml"/>
 </Types>`
       );
     }
@@ -736,9 +771,11 @@ export class WorkbookImpl implements Workbook {
    * 更新 Workbook 關聯以包含 Pivot Table 檔案
    */
   private async _updateWorkbookRelsForPivotTables(zip: JSZip, pivotFiles: any[]): Promise<void> {
-    let workbookRelsXml = await this._getWorkbookRelsXml();
+    // 從現有的 workbook.xml.rels 開始，而不是重新生成
+    const existingWorkbookRels = zip.file('xl/_rels/workbook.xml.rels');
+    let workbookRelsXml = existingWorkbookRels ? await existingWorkbookRels.async('text') : await this._getWorkbookRelsXml();
     
-    // 添加 PivotCache 關聯
+    // 添加 PivotCache 定義關聯
     for (const file of pivotFiles) {
       workbookRelsXml = workbookRelsXml.replace(
         '</Relationships>',
@@ -786,24 +823,34 @@ export class WorkbookImpl implements Workbook {
     zip.file('xl/workbook.xml', workbookXml);
     zip.file('xl/_rels/workbook.xml.rels', workbookRelsXml);
     
-    // 添加 xl/sharedStrings.xml
+    // 先生成工作表的 XML 來填充 _sstMap
+    const sheetXmls: string[] = [];
+    for (let i = 0; i < this._sheets.length; i++) {
+      const sheet = this._sheets[i];
+      const sheetXml = buildSheetXml(sheet, i + 1, this._sstMap, this);
+      sheetXmls.push(sheetXml);
+    }
+    
+    // 現在 _sstMap 已經被填充，可以生成 sharedStrings.xml
     zip.file('xl/sharedStrings.xml', buildSharedStringsXml(this._sstMap, this._sstArray));
     
     // 添加 xl/styles.xml
     zip.file('xl/styles.xml', buildStylesXml(this));
     
-    // 添加工作表
+    // 添加工作表 XML 到 ZIP
     for (let i = 0; i < this._sheets.length; i++) {
-      const sheet = this._sheets[i];
-      const sheetXml = buildSheetXml(sheet, i, this._sstMap, this);
-      zip.file(`xl/worksheets/sheet${i + 1}.xml`, sheetXml);
+      zip.file(`xl/worksheets/sheet${i + 1}.xml`, sheetXmls[i]);
       
-      // 添加工作表關聯
-      const sheetRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      // 檢查工作表是否有圖表，只有在有圖表時才添加繪圖關聯
+      const charts = (this._sheets[i] as any).getCharts ? (this._sheets[i] as any).getCharts() : [];
+      if (charts.length > 0) {
+        // 添加工作表關聯（包含繪圖）
+        const sheetRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${i + 1}.xml"/>
 </Relationships>`;
-      zip.file(`xl/worksheets/_rels/sheet${i + 1}.xml.rels`, sheetRelsXml);
+        zip.file(`xl/worksheets/_rels/sheet${i + 1}.xml.rels`, sheetRelsXml);
+      }
     }
   }
 

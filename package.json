@@ -1,6 +1,6 @@
 {
   "name": "xml-xlsx-lite",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Minimal XLSX writer using raw XML + JSZip, inspired by exceljs API",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -16,6 +16,7 @@
   "files": [
     "dist",
     "README.md",
+    "README-API.md",
     "LICENSE"
   ],
   "scripts": {
@@ -34,7 +35,11 @@
     "jszip",
     "exceljs",
     "lightweight",
-    "minimal"
+    "minimal",
+    "pivot-table",
+    "charts",
+    "taiwan",
+    "chinese"
   ],
   "author": "Mike",
   "license": "MIT",

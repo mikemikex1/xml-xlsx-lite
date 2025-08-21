@@ -130,7 +130,12 @@ export function buildSheetXml(ws: Worksheet, index: number, sstMap: Map<string, 
       // Phase 3: 公式支援
       const formulaAttr = cell.options.formula ? ` f="${cell.options.formula}"` : "";
       
-      parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}><v>${v}</v></c>`);
+      // 如果有公式，不輸出值標籤；否則輸出值標籤
+      if (cell.options.formula) {
+        parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}/>`);
+      } else {
+        parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}><v>${v}</v></c>`);
+      }
     }
     parts.push("</row>");
   }
