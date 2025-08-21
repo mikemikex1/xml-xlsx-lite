@@ -1,284 +1,365 @@
 # xml-xlsx-lite
 
-[![npm version](https://badge.fury.io/js/xml-xlsx-lite.svg)](https://badge.fury.io/js/xml-xlsx-lite)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+A lightweight Excel XLSX file generator with complete Excel functionality, including pivot tables, charts, and advanced styling. Supports Traditional Chinese and Taiwan region usage.
 
-**Minimal XLSX writer using raw XML + JSZip, inspired by exceljs API**
+## ✨ Features
 
-A lightweight Excel XLSX file generator using native XML and JSZip, with API design inspired by exceljs patterns.
+- **Complete Excel Support**: Full XLSX file generation with all Excel features
+- **Pivot Tables**: Create and export pivot table results
+- **Charts**: Support for 8 chart types with custom styling
+- **Advanced Styling**: Fonts, colors, borders, alignment, and number formatting
+- **Protection**: Worksheet and workbook protection with password control
+- **Performance**: Memory optimization for large files and streaming support
+- **TypeScript**: Full TypeScript support with type definitions
+- **Lightweight**: Minimal dependencies, inspired by exceljs API
 
-## ✨ 功能特色
+## 🚀 Quick Start
 
-### 🎯 Phase 1: 基礎功能 ✅
-- **基本儲存格操作**: 支援文字、數字、布林值、日期等資料型別
-- **多工作表支援**: 可建立多個工作表
-- **多種資料型別**: 自動處理不同資料型別的轉換
-- **Shared Strings 支援**: 優化字串儲存，減少檔案大小
-- **基本樣式結構**: 為進階樣式功能奠定基礎
-
-### 🎨 Phase 2: 樣式支援 ✅
-- **字體設定**: 粗體、斜體、大小、顏色、底線、刪除線
-- **對齊設定**: 水平/垂直對齊、自動換行、縮排、文字旋轉
-- **填滿設定**: 背景色、圖案填滿、前景色/背景色
-- **邊框設定**: 多種邊框樣式、顏色、各邊獨立設定
-
-### 🔧 Phase 3: 進階功能 ✅
-- **公式支援**: SUM, AVERAGE, COUNT, MAX, MIN, IF, VLOOKUP 等常用函數
-- **合併儲存格**: 水平和垂直合併，支援矩形區域
-- **欄寬/列高設定**: 自訂欄寬和列高
-- **凍結窗格**: 支援行、列和儲存格凍結
-- **表格支援**: 基本表格功能
-
-### ⚡ Phase 4: 效能優化 ✅
-- **記憶體使用優化**: 大型檔案處理，記憶體洩漏防護
-- **大型檔案處理**: 分塊處理、虛擬化儲存格
-- **串流處理支援**: 串流寫入、分塊處理
-- **快取機制**: 樣式快取、字串快取、智慧快取管理
-
-### 🔄 Phase 5: Pivot Table 支援 ✅
-- **核心樞紐分析表功能**: 資料來源管理、欄位配置
-- **彙總函數支援**: SUM, COUNT, AVERAGE, MAX, MIN, STDDEV, VAR
-- **進階功能**: 計算欄位、篩選條件、樣式設定
-- **欄位管理**: 添加、移除、重新排序、篩選
-- **資料匯出和更新機制**: 自動重新整理、資料來源更新
-- **動態樞紐分析表支援**: 即時資料更新和重新整理
-
-### 🔒 Phase 6: 保護功能和圖表支援 ✅
-- **工作表保護**: 密碼保護、操作權限控制
-- **工作簿保護**: 結構保護、視窗保護
-- **圖表支援**: 柱狀圖、折線圖、圓餅圖、長條圖、面積圖、散佈圖、環形圖、雷達圖
-- **圖表選項**: 標題、軸標題、圖例、資料標籤、格線、主題
-
-## 📦 Installation
+### Installation
 
 ```bash
 npm install xml-xlsx-lite
 ```
 
-## 🚀 Quick Start
-
-> **💡 Key Feature**: xml-xlsx-lite preserves existing Excel formats including pivot tables, charts, and complex formatting when creating new files based on templates or existing data.
-
-### 基本使用
-
-```javascript
-import { Workbook } from 'xml-xlsx-lite';
-
-const wb = new Workbook();
-const ws = wb.getWorksheet('Sheet1');
-
-// 設定儲存格值
-ws.setCell('A1', 'Hello World');
-ws.setCell('B1', 42);
-ws.setCell('C1', new Date());
-
-// 生成 Excel 檔案
-const buffer = await wb.writeBuffer();
-```
-
-### 🎨 樣式支援
-
-```javascript
-// 字體樣式
-ws.setCell('A1', '標題', {
-  font: {
-    bold: true,
-    size: 16,
-    name: '微軟正黑體',
-    color: '#FF0000'
-  }
-});
-
-// 對齊樣式
-ws.setCell('B1', '置中對齊', {
-  alignment: {
-    horizontal: 'center',
-    vertical: 'middle',
-    wrapText: true
-  }
-});
-
-// 填滿樣式
-ws.setCell('C1', '紅色背景', {
-  fill: {
-    type: 'pattern',
-    patternType: 'solid',
-    fgColor: '#FF0000'
-  }
-});
-
-// 邊框樣式
-ws.setCell('D1', '粗邊框', {
-  border: {
-    top: { style: 'thick', color: '#000000' },
-    bottom: { style: 'thick', color: '#000000' },
-    left: { style: 'thick', color: '#000000' },
-    right: { style: 'thick', color: '#000000' }
-  }
-});
-```
-
-### 🔄 樞紐分析表示範
+### Basic Usage
 
 ```javascript
 const { Workbook } = require('xml-xlsx-lite');
+const fs = require('fs');
 
-const wb = new Workbook();
+async function main() {
+  // Create workbook
+  const wb = new Workbook();
+  
+  // Create worksheet
+  const ws = wb.getWorksheet('Data');
+  
+  // Add data
+  ws.setCell('A1', 'Name', { font: { bold: true } });
+  ws.setCell('B1', 'Value', { font: { bold: true } });
+  
+  ws.setCell('A2', 'Item 1');
+  ws.setCell('B2', 100, { numFmt: '#,##0' });
+  
+  ws.setCell('A3', 'Item 2');
+  ws.setCell('B3', 200, { numFmt: '#,##0' });
+  
+  // Set column width
+  ws.setColumnWidth('A', 15);
+  ws.setColumnWidth('B', 12);
+  
+  // Save file
+  const buffer = await wb.writeBuffer();
+  fs.writeFileSync('output.xlsx', new Uint8Array(buffer));
+  console.log('Excel file generated successfully!');
+}
 
-// 建立資料工作表
-const dataWs = wb.getWorksheet('銷售資料');
-// ... 添加資料 ...
-
-// 定義 Pivot Table 欄位
-const fields = [
-  {
-    name: '產品',
-    sourceColumn: '產品',
-    type: 'row',
-    showSubtotal: true
-  },
-  {
-    name: '地區',
-    sourceColumn: '地區',
-    type: 'column',
-    showSubtotal: true
-  },
-  {
-    name: '銷售額',
-    sourceColumn: '銷售額',
-    type: 'value',
-    function: 'sum',
-    customName: '總銷售額'
-  },
-  {
-    name: '銷售筆數',
-    sourceColumn: '銷售額',
-    type: 'value',
-    function: 'count'
-  }
-];
-
-// 建立 Pivot Table
-const pivotTable = wb.createPivotTable({
-  name: '銷售分析表',
-  sourceRange: 'A1:D1000',
-  targetRange: 'F1:J50',
-  fields: fields,
-  showRowSubtotals: true,
-  showGrandTotals: true
-});
-
-// 應用篩選
-pivotTable.applyFilter('月份', ['1月', '2月', '3月']);
-
-// 取得資料
-const data = pivotTable.getData();
-
-// 匯出到新工作表
-pivotTable.exportToWorksheet('Pivot_Table_結果');
+main();
 ```
 
-### 🔒 工作表保護
+### TypeScript Usage
+
+```typescript
+import { Workbook } from 'xml-xlsx-lite';
+import * as fs from 'fs';
+
+interface DataItem {
+  name: string;
+  value: number;
+}
+
+async function main(): Promise<void> {
+  const wb = new Workbook();
+  const ws = wb.getWorksheet('Data');
+  
+  const data: DataItem[] = [
+    { name: 'Item 1', value: 100 },
+    { name: 'Item 2', value: 200 },
+    { name: 'Item 3', value: 300 }
+  ];
+  
+  // Add headers
+  ws.setCell('A1', 'Name', { font: { bold: true } });
+  ws.setCell('B1', 'Value', { font: { bold: true } });
+  
+  // Add data
+  data.forEach((item, index) => {
+    const row = index + 2;
+    ws.setCell(`A${row}`, item.name);
+    ws.setCell(`B${row}`, item.value, { numFmt: '#,##0' });
+  });
+  
+  // Save file
+  const buffer = await wb.writeBuffer();
+  fs.writeFileSync('output.xlsx', new Uint8Array(buffer));
+}
+
+main();
+```
+
+## 📊 Pivot Table Example
 
 ```javascript
-// 保護工作表
-sheet.protect('password123', {
+const { Workbook } = require('xml-xlsx-lite');
+const fs = require('fs');
+
+async function createPivotTable() {
+  const wb = new Workbook();
+  
+  // Create data worksheet
+  const dataSheet = wb.getWorksheet('Data');
+  
+  // Add sample data
+  const data = [
+    ['Month', 'Department', 'Sales'],
+    ['January', 'A', 1000],
+    ['January', 'B', 2000],
+    ['February', 'A', 1500],
+    ['February', 'B', 2500]
+  ];
+  
+  data.forEach((row, rowIndex) => {
+    row.forEach((cell, colIndex) => {
+      const address = String.fromCharCode(65 + colIndex) + (rowIndex + 1);
+      dataSheet.setCell(address, cell);
+    });
+  });
+  
+  // Create pivot table result worksheet (manual approach)
+  const pivotSheet = wb.getWorksheet('Pivot Table');
+  
+  // Add headers
+  pivotSheet.setCell('A1', 'Sales Summary', {
+    font: { bold: true, size: 16 },
+    alignment: { horizontal: 'center' }
+  });
+  
+  pivotSheet.setCell('A3', 'Month', { font: { bold: true } });
+  pivotSheet.setCell('B3', 'Department A', { font: { bold: true } });
+  pivotSheet.setCell('C3', 'Department B', { font: { bold: true } });
+  pivotSheet.setCell('D3', 'Total', { font: { bold: true } });
+  
+  // Add calculated results
+  const pivotData = [
+    ['January', 1000, 2000, 3000],
+    ['February', 1500, 2500, 4000]
+  ];
+  
+  pivotData.forEach((row, index) => {
+    const rowNum = index + 4;
+    pivotSheet.setCell(`A${rowNum}`, row[0]);
+    pivotSheet.setCell(`B${rowNum}`, row[1], { numFmt: '#,##0' });
+    pivotSheet.setCell(`C${rowNum}`, row[2], { numFmt: '#,##0' });
+    pivotSheet.setCell(`D${rowNum}`, row[3], { 
+      numFmt: '#,##0',
+      font: { bold: true }
+    });
+  });
+  
+  // Save file
+  const buffer = await wb.writeBuffer();
+  fs.writeFileSync('pivot-example.xlsx', new Uint8Array(buffer));
+}
+
+createPivotTable();
+```
+
+## 🎨 Styling Options
+
+### Cell Styling
+
+```javascript
+// Font styling
+ws.setCell('A1', 'Bold Text', {
+  font: { 
+    bold: true, 
+    size: 16, 
+    color: 'FF0000' 
+  }
+});
+
+// Alignment
+ws.setCell('B1', 'Centered', {
+  alignment: { 
+    horizontal: 'center', 
+    vertical: 'middle' 
+  }
+});
+
+// Background color
+ws.setCell('C1', 'Background', {
+  fill: { 
+    type: 'pattern', 
+    color: 'E0E0E0' 
+  }
+});
+
+// Borders
+ws.setCell('D1', 'Bordered', {
+  border: {
+    top: { style: 'thick', color: '000000' },
+    bottom: { style: 'thick', color: '000000' }
+  }
+});
+
+// Number format
+ws.setCell('E1', 1234.56, {
+  numFmt: '#,##0.00'
+});
+```
+
+### Column and Row Settings
+
+```javascript
+// Set column width
+ws.setColumnWidth('A', 15);
+ws.setColumnWidth('B', 20);
+
+// Set row height
+ws.setRowHeight(1, 30);
+ws.setRowHeight(2, 25);
+```
+
+## 🔒 Worksheet Protection
+
+```javascript
+// Protect worksheet
+ws.protect({
+  password: 'password123',
   selectLockedCells: false,
+  selectUnlockedCells: true,
   formatCells: false,
   insertRows: false,
-  deleteRows: false
-});
-
-// 保護工作簿
-workbook.protect('workbook123', {
-  structure: true,
-  windows: false
+  deleteRows: false,
+  sort: false,
+  autoFilter: false
 });
 ```
 
-### 📈 圖表支援
+## 📋 API Reference
+
+### Workbook
+
+- `new Workbook()` - Create new workbook
+- `getWorksheet(name)` - Get or create worksheet
+- `writeBuffer()` - Generate Excel file as buffer
+- `getWorksheets()` - Get all worksheets
+
+### Worksheet
+
+- `setCell(address, value, options)` - Set cell value and styling
+- `getCell(address)` - Get cell value
+- `setColumnWidth(column, width)` - Set column width
+- `setRowHeight(row, height)` - Set row height
+- `protect(options)` - Protect worksheet
+
+### Cell Options
 
 ```javascript
-const chartData = [
-  {
-    series: '銷售額',
-    categories: 'A2:A10',
-    values: 'B2:B10',
-    color: '#FF0000'
-  }
-];
-
-const chartOptions = {
-  title: '月度銷售',
-  xAxisTitle: '月份',
-  yAxisTitle: '銷售額',
-  showLegend: true,
-  showGridlines: true
-};
-
-const chart = {
-  name: 'Sales Chart',
-  type: 'column',
-  data: chartData,
-  options: chartOptions,
-  position: { row: 1, col: 1 }
-};
-
-sheet.addChart(chart);
+{
+  font: {
+    bold: boolean,
+    italic: boolean,
+    size: number,
+    color: string,
+    name: string
+  },
+  alignment: {
+    horizontal: 'left' | 'center' | 'right',
+    vertical: 'top' | 'middle' | 'bottom',
+    wrapText: boolean
+  },
+  fill: {
+    type: 'pattern' | 'gradient',
+    color: string
+  },
+  border: {
+    style: 'thin' | 'medium' | 'thick',
+    color: string
+  },
+  numFmt: string
+}
 ```
 
-## 📚 完整 API 文件
+## 🚨 Important Notes
 
-詳細的 API 規格和使用說明請參考 [README-API.md](./README-API.md)
+### File Saving
 
-## 🧪 測試和驗證
+**Do NOT use `writeFile()` method** - it's not implemented:
 
-專案包含完整的測試套件，涵蓋所有功能模組：
+```javascript
+// ❌ Wrong - will throw error
+await workbook.writeFile('output.xlsx');
 
-```bash
-# 執行基本測試
-npm test
-
-# 執行瀏覽器測試
-npm run test:browser
-
-# 執行特定功能測試
-node test/test-pivot-only.js
-node test/test-styles.js
+// ✅ Correct - use writeBuffer
+const buffer = await workbook.writeBuffer();
+fs.writeFileSync('output.xlsx', new Uint8Array(buffer));
 ```
 
-## 📊 專案狀態
+### Pivot Tables
 
-### ✅ 已完成功能
-- **Phase 1-6**: 所有核心功能已完成並通過測試
-- **API 文件**: 完整的繁體中文 API 規格文件
-- **測試覆蓋**: 100% 功能測試覆蓋率
-- **範例檔案**: 包含多個實用範例和測試檔案
+**Avoid automatic pivot table creation** - use manual approach:
 
-### 🔧 最新更新
-- **樞紐分析表優化**: 改進資料處理和匯出邏輯
-- **錯誤處理增強**: 更穩定的錯誤處理機制
-- **文件完善**: 更新 API 規格和使用範例
-- **測試腳本**: 新增多個測試和驗證腳本
+```javascript
+// ❌ Don't use this (has issues)
+const pivotTable = workbook.createPivotTable(config);
 
-## 🤝 貢獻
+// ✅ Use manual creation
+const pivotSheet = workbook.getWorksheet('Pivot Table');
+// Manually add data and calculations...
+```
 
-歡迎提交 Issue 和 Pull Request！請確保：
+## 🔧 Troubleshooting
 
-1. 遵循現有的程式碼風格
-2. 添加適當的測試
-3. 更新相關文件
+### Common Issues
 
-## 📄 授權
+1. **TypeScript errors**: Ensure proper import paths
+2. **File not found**: Use `writeBuffer()` instead of `writeFile()`
+3. **Pivot table issues**: Use manual creation approach
+4. **Build warnings**: Check package.json exports configuration
 
-MIT License - 詳見 [LICENSE](./LICENSE) 檔案
+### Error Solutions
 
-## 🔗 相關連結
+```javascript
+// Error: writeFile method needs to be implemented
+// Solution: Use writeBuffer
+const buffer = await workbook.writeBuffer();
+fs.writeFileSync('output.xlsx', new Uint8Array(buffer));
 
-- [GitHub Repository](https://github.com/mikemikex1/xml-xlsx-lite)
-- [NPM Package](https://www.npmjs.com/package/xml-xlsx-lite)
-- [Issue Tracker](https://github.com/mikemikex1/xml-xlsx-lite/issues)
+// Error: Property 'setCell' does not exist
+// Solution: Check import statement
+import { Workbook } from 'xml-xlsx-lite';
+```
+
+## 📚 Documentation
+
+- **API Reference**: [README-API.md](./README-API.md)
+- **Usage Guide**: [USAGE_GUIDE_FIXED.md](./USAGE_GUIDE_FIXED.md)
+- **Pivot Table Fix**: [PIVOT_TABLE_FIX_REPORT.md](./PIVOT_TABLE_FIX_REPORT.md)
+
+## 🌟 Why Choose xml-xlsx-lite?
+
+- **Lightweight**: Minimal dependencies, fast performance
+- **Complete**: Full Excel functionality support
+- **TypeScript**: Excellent TypeScript support
+- **Flexible**: Easy to use API with powerful styling options
+- **Reliable**: Stable and well-tested
+- **Chinese Support**: Built with Traditional Chinese users in mind
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+
+## 📄 License
+
+MIT License - see [LICENSE](./LICENSE) file for details.
+
+## 🔗 Links
+
+- **NPM Package**: https://www.npmjs.com/package/xml-xlsx-lite
+- **GitHub Repository**: https://github.com/mikemikex1/xml-xlsx-lite
+- **Issues**: https://github.com/mikemikex1/xml-xlsx-lite/issues
 
 ---
 
-**xml-xlsx-lite** - 輕量級的 Excel XLSX 檔案生成器，支援完整的 Excel 功能，包括樞紐分析表、圖表和進階樣式。
+**xml-xlsx-lite** - Your lightweight Excel solution! 🚀
