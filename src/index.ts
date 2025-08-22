@@ -24,6 +24,9 @@ export { PivotTableImpl } from './pivot-table-impl';
 // 匯出動態樞紐分析表建構器
 export * from './pivot-builder';
 
+// 匯出手動樞紐分析表建構器
+export * from './pivot/manual';
+
 // 匯出工作簿相關類別
 export { WorkbookImpl } from './workbook';
 
@@ -42,7 +45,11 @@ export * from './performance-optimizer';
 // 匯出 XML 解析器
 export * from './xml-parser';
 
+// 匯出 API 相容性層
+export * from './api/compat';
 
+// 初始化相容性方法
+import './init';
 
 // 主要匯出
 import { WorkbookImpl } from './workbook';

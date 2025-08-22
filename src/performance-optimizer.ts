@@ -3,7 +3,7 @@
  * 實現 sharedStrings 自動切換和大檔案處理優化
  */
 
-import { PerformanceWarning } from './errors';
+import { XlsxLiteError } from './errors';
 
 /**
  * 效能優化配置
@@ -200,11 +200,8 @@ export class PerformanceOptimizer {
   /**
    * 創建效能警告
    */
-  createPerformanceWarning(message: string, suggestion?: string): PerformanceWarning {
-    return new PerformanceWarning(message, {
-      suggestion,
-      threshold: this.stats.totalCells
-    });
+  createPerformanceWarning(message: string, suggestion?: string): XlsxLiteError {
+    return new XlsxLiteError(message, 'UNSUPPORTED_OPERATION', suggestion);
   }
 
   /**

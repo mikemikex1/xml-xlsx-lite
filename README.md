@@ -288,6 +288,10 @@ ws.protect({
 - `new Workbook()` - Create new workbook
 - `getWorksheet(name)` - Get or create worksheet
 - `writeBuffer()` - Generate Excel file as buffer
+- `writeFile(filePath)` - Write Excel file directly to disk
+- `writeFileWithPivotTables(filePath, options)` - Write file with pivot table
+- `writeFileWithMultiplePivots(filePath, optionsArray)` - Write file with multiple pivot tables
+- `createManualPivotTable(data, options)` - Create programmatic pivot table
 - `getWorksheets()` - Get all worksheets
 
 ### Worksheet
@@ -330,15 +334,35 @@ ws.protect({
 
 ### File Saving
 
-**Do NOT use `writeFile()` method** - it's not implemented:
+**Now you can use `writeFile()` method!** - We've added a thin wrapper:
 
 ```javascript
-// ❌ Wrong - will throw error
+// ✅ New - use writeFile directly
 await workbook.writeFile('output.xlsx');
 
-// ✅ Correct - use writeBuffer
+// ✅ Still works - use writeBuffer
 const buffer = await workbook.writeBuffer();
 fs.writeFileSync('output.xlsx', new Uint8Array(buffer));
+```
+
+### New API Methods
+
+**Added for better user experience:**
+
+```javascript
+// Write file with pivot table
+await workbook.writeFileWithPivotTables('output.xlsx', pivotOptions);
+
+// Write file with multiple pivot tables
+await workbook.writeFileWithMultiplePivots('output.xlsx', [pivot1, pivot2]);
+
+// Create manual pivot table (programmatic aggregation)
+const result = workbook.createManualPivotTable(data, {
+  rowField: 'Department',
+  columnField: 'Month', 
+  valueField: 'Sales',
+  aggregation: 'sum'
+});
 ```
 
 ### Pivot Tables
@@ -359,21 +383,20 @@ const pivotSheet = workbook.getWorksheet('Pivot Table');
 ### Common Issues
 
 1. **TypeScript errors**: Ensure proper import paths
-2. **File not found**: Use `writeBuffer()` instead of `writeFile()`
-3. **Pivot table issues**: Use manual creation approach
+2. **File operations**: Use `writeFile()` for direct file writing
+3. **Pivot table issues**: Use `createManualPivotTable()` for programmatic aggregation
 4. **Build warnings**: Check package.json exports configuration
 
 ### Error Solutions
 
 ```javascript
-// Error: writeFile method needs to be implemented
-// Solution: Use writeBuffer
-const buffer = await workbook.writeBuffer();
-fs.writeFileSync('output.xlsx', new Uint8Array(buffer));
-
 // Error: Property 'setCell' does not exist
 // Solution: Check import statement
 import { Workbook } from 'xml-xlsx-lite';
+
+// Error: File system operations not available
+// Solution: Ensure you're running in Node.js environment
+// Browser environments don't support file operations
 ```
 
 ## 📚 Documentation

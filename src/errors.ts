@@ -1,135 +1,90 @@
 /**
- * xml-xlsx-lite 錯誤處理系統
+ * xml-xlsx-lite 自訂錯誤類型
+ * 提供統一的錯誤處理和建議
  */
 
-export class InvalidAddressError extends Error {
-  constructor(message: string, public details: { sample?: string }) {
+export class XlsxLiteError extends Error {
+  constructor(
+    message: string,
+    public code: 'METHOD_NOT_IMPLEMENTED' | 'INVALID_PIVOT_SPEC' | 'UNSUPPORTED_OPERATION' | 'INVALID_DATA' | 'FILE_OPERATION_FAILED',
+    public suggestion?: string
+  ) {
     super(message);
-    this.name = 'InvalidAddressError';
-  }
-}
-
-export class UnsupportedTypeError extends Error {
-  constructor(message: string, public details: { suggest?: string }) {
-    super(message);
-    this.name = 'UnsupportedTypeError';
-  }
-}
-
-export class CorruptedFileError extends Error {
-  constructor(message: string, public details: { file?: string; expected?: string }) {
-    super(message);
-    this.name = 'CorruptedFileError';
-  }
-}
-
-export class UnsupportedFeatureWarning extends Error {
-  constructor(message: string, public details: { feature?: string; alternative?: string }) {
-    super(message);
-    this.name = 'UnsupportedFeatureWarning';
-  }
-}
-
-export class ValidationError extends Error {
-  constructor(message: string, public details: { field?: string; value?: any; expected?: any }) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-
-export class PerformanceWarning extends Error {
-  constructor(message: string, public details: { suggestion?: string; threshold?: number }) {
-    super(message);
-    this.name = 'PerformanceWarning';
+    this.name = 'XlsxLiteError';
   }
 }
 
 /**
- * 錯誤代碼定義
+ * 創建方法未實作錯誤
  */
-export enum ErrorCodes {
-  INVALID_ADDRESS = 'INVALID_ADDRESS',
-  UNSUPPORTED_TYPE = 'UNSUPPORTED_TYPE',
-  CORRUPTED_FILE = 'CORRUPTED_FILE',
-  UNSUPPORTED_FEATURE = 'UNSUPPORTED_FEATURE',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  PERFORMANCE_WARNING = 'PERFORMANCE_WARNING'
+export function createMethodNotImplementedError(
+  methodName: string,
+  alternative: string,
+  example?: string
+): XlsxLiteError {
+  return new XlsxLiteError(
+    `Method '${methodName}' is not implemented. ${alternative}`,
+    'METHOD_NOT_IMPLEMENTED',
+    example
+  );
 }
 
 /**
- * 錯誤訊息模板
+ * 創建樞紐分析表規格錯誤
  */
-export const ErrorMessages = {
-  [ErrorCodes.INVALID_ADDRESS]: (address: string) => 
-    `Invalid cell address: ${address}. Expected format: A1, B2, etc.`,
-  
-  [ErrorCodes.UNSUPPORTED_TYPE]: (type: string, value: any) => 
-    `Unsupported data type: ${type} for value ${value}. Please convert to supported type.`,
-  
-  [ErrorCodes.CORRUPTED_FILE]: (file: string) => 
-    `Corrupted or invalid file: ${file}. File may be damaged or in unsupported format.`,
-  
-  [ErrorCodes.UNSUPPORTED_FEATURE]: (feature: string) => 
-    `Feature not yet implemented: ${feature}. This will be available in future versions.`,
-  
-  [ErrorCodes.VALIDATION_ERROR]: (field: string, value: any, expected: any) => 
-    `Validation failed for ${field}: got ${value}, expected ${expected}.`,
-  
-  [ErrorCodes.PERFORMANCE_WARNING]: (message: string) => 
-    `Performance warning: ${message}. Consider optimizing your data or using streaming mode.`
-};
+export function createInvalidPivotSpecError(
+  field: string,
+  value: any,
+  expected: string
+): XlsxLiteError {
+  return new XlsxLiteError(
+    `Invalid pivot table specification: ${field} "${value}" is not valid. Expected: ${expected}`,
+    'INVALID_PIVOT_SPEC',
+    `Please check the ${field} configuration and ensure it matches the expected format.`
+  );
+}
 
 /**
- * 創建標準化錯誤
+ * 創建不支援操作錯誤
  */
-export function createError(
-  code: ErrorCodes, 
-  details: Record<string, any> = {}, 
-  customMessage?: string
-): Error {
-  let message: string;
-  
-  try {
-    switch (code) {
-      case ErrorCodes.INVALID_ADDRESS:
-        message = customMessage || ErrorMessages[code](details.sample || '');
-        break;
-      case ErrorCodes.UNSUPPORTED_TYPE:
-        message = customMessage || ErrorMessages[code](details.type || '', details.value);
-        break;
-      case ErrorCodes.CORRUPTED_FILE:
-        message = customMessage || ErrorMessages[code](details.file || '');
-        break;
-      case ErrorCodes.UNSUPPORTED_FEATURE:
-        message = customMessage || ErrorMessages[code](details.feature || '');
-        break;
-      case ErrorCodes.VALIDATION_ERROR:
-        message = customMessage || ErrorMessages[code](details.field || '', details.value, details.expected);
-        break;
-      case ErrorCodes.PERFORMANCE_WARNING:
-        message = customMessage || ErrorMessages[code](details.suggestion || '');
-        break;
-      default:
-        message = customMessage || `Error occurred: ${code}`;
-    }
-  } catch (e) {
-    message = customMessage || `Error occurred: ${code}`;
-  }
-  
-  switch (code) {
-    case ErrorCodes.INVALID_ADDRESS:
-      return new InvalidAddressError(message, details);
-    case ErrorCodes.UNSUPPORTED_TYPE:
-      return new UnsupportedTypeError(message, details);
-    case ErrorCodes.CORRUPTED_FILE:
-      return new CorruptedFileError(message, details);
-    case ErrorCodes.UNSUPPORTED_FEATURE:
-      return new UnsupportedFeatureWarning(message, details);
-    case ErrorCodes.VALIDATION_ERROR:
-      return new ValidationError(message, details);
-    case ErrorCodes.PERFORMANCE_WARNING:
-      return new PerformanceWarning(message, details);
-    default:
-      return new Error(message);
-  }
+export function createUnsupportedOperationError(
+  operation: string,
+  reason: string,
+  alternative?: string
+): XlsxLiteError {
+  return new XlsxLiteError(
+    `Operation '${operation}' is not supported: ${reason}`,
+    'UNSUPPORTED_OPERATION',
+    alternative
+  );
+}
+
+/**
+ * 創建無效資料錯誤
+ */
+export function createInvalidDataError(
+  field: string,
+  value: any,
+  rule: string
+): XlsxLiteError {
+  return new XlsxLiteError(
+    `Invalid data: ${field} "${value}" violates rule: ${rule}`,
+    'INVALID_DATA',
+    `Please validate your data and ensure it meets the requirements.`
+  );
+}
+
+/**
+ * 創建檔案操作錯誤
+ */
+export function createFileOperationError(
+  operation: string,
+  filePath: string,
+  details: string
+): XlsxLiteError {
+  return new XlsxLiteError(
+    `File operation '${operation}' failed for '${filePath}': ${details}`,
+    'FILE_OPERATION_FAILED',
+    `Please check file permissions, disk space, and ensure the file path is valid.`
+  );
 }

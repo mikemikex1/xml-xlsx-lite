@@ -156,9 +156,14 @@ export class WorkbookReaderImpl implements WorkbookReader {
   async readFile(path: string, options: ReadOptions = {}): Promise<Workbook> {
     // 在 Node.js 環境中讀取檔案
     if (typeof window === 'undefined') {
-      const fs = await import('fs');
-      const buffer = fs.readFileSync(path);
-      return this.readBuffer(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), options);
+      try {
+        // @ts-ignore - 動態導入 fs 模組
+        const fs = await import('fs');
+        const buffer = fs.readFileSync(path);
+        return this.readBuffer(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), options);
+      } catch (error) {
+        throw new Error(`Failed to read file: ${error.message}`);
+      }
     } else {
       throw new Error('readFile is not supported in browser environment. Use readBuffer instead.');
     }
