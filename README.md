@@ -359,6 +359,161 @@ workbook.createManualPivotTable(pivotData, {
 
 #### 6.2 Dynamic Pivot Tables
 
+Dynamic pivot tables allow you to insert refreshable pivot tables into existing Excel files. This is a powerful feature for creating professional reports.
+
+##### Complete Example: From 0 to 1 Building Dynamic Pivot Tables
+
+```typescript
+import { Workbook, addPivotToWorkbookBuffer } from 'xml-xlsx-lite';
+import * as fs from 'fs';
+
+async function createDynamicPivotTable() {
+  console.log('🚀 Starting to build dynamic pivot table...');
+  
+  // Step 1: Create base workbook (with data and blank pivot table worksheet)
+  console.log('📝 Step 1: Creating base workbook...');
+  
+  const workbook = new Workbook();
+  
+  // Create data worksheet
+  const dataSheet = workbook.getWorksheet('Data');
+  
+  // Add header row
+  dataSheet.setCell('A1', 'Department', { font: { bold: true } });
+  dataSheet.setCell('B1', 'Month', { font: { bold: true } });
+  dataSheet.setCell('C1', 'Product', { font: { bold: true } });
+  dataSheet.setCell('D1', 'Sales', { font: { bold: true } });
+  
+  // Add test data
+  const testData = [
+    ['IT', 'Jan', 'Software', 50000],
+    ['IT', 'Jan', 'Hardware', 30000],
+    ['IT', 'Feb', 'Software', 60000],
+    ['IT', 'Feb', 'Hardware', 35000],
+    ['HR', 'Jan', 'Training', 20000],
+    ['HR', 'Jan', 'Recruitment', 15000],
+    ['HR', 'Feb', 'Training', 25000],
+    ['HR', 'Feb', 'Recruitment', 18000],
+    ['Finance', 'Jan', 'Audit', 40000],
+    ['Finance', 'Jan', 'Tax', 25000],
+    ['Finance', 'Feb', 'Audit', 45000],
+    ['Finance', 'Feb', 'Tax', 30000]
+  ];
+  
+  // Write data
+  for (let i = 0; i < testData.length; i++) {
+    const row = testData[i];
+    dataSheet.setCell(`A${i + 2}`, row[0]);
+    dataSheet.setCell(`B${i + 2}`, row[1]);
+    dataSheet.setCell(`C${i + 2}`, row[2]);
+    dataSheet.setCell(`D${i + 2}`, row[3], { numFmt: '#,##0' });
+  }
+  
+  // Set column widths
+  dataSheet.setColumnWidth('A', 15);
+  dataSheet.setColumnWidth('B', 12);
+  dataSheet.setColumnWidth('C', 15);
+  dataSheet.setColumnWidth('D', 15);
+  
+  // Create blank pivot table worksheet
+  const pivotSheet = workbook.getWorksheet('Pivot');
+  
+  // Add title
+  pivotSheet.setCell('A1', 'Pivot Table', { font: { bold: true, size: 16 } });
+  pivotSheet.setCell('A2', '(Dynamic pivot table will be inserted here)', { font: { italic: true, color: '808080' } });
+  
+  // Set column width
+  pivotSheet.setColumnWidth('A', 30);
+  
+  console.log('✅ Base workbook created successfully');
+  
+  // Step 2: Output base Excel file
+  console.log('💾 Step 2: Outputting base Excel file...');
+  
+  const baseBuffer = await workbook.writeBuffer();
+  const baseFilename = 'base-workbook.xlsx';
+  fs.writeFileSync(baseFilename, new Uint8Array(baseBuffer));
+  
+  console.log(`✅ Base file ${baseFilename} generated`);
+  console.log('📊 File size:', (baseBuffer.byteLength / 1024).toFixed(2), 'KB');
+  
+  // Step 3: Use dynamic pivot table builder
+  console.log('🔧 Step 3: Dynamically inserting pivot table...');
+  
+  const pivotOptions = {
+    sourceSheet: "Data",
+    sourceRange: "A1:D13",         // Including header row
+    targetSheet: "Pivot",
+    anchorCell: "A3",
+    layout: {
+      rows: [{ name: "Department" }],
+      cols: [{ name: "Month" }],
+      values: [
+        { 
+          name: "Sales", 
+          agg: "sum", 
+          displayName: "Total Sales",
+          numFmtId: 0
+        }
+      ],
+    },
+    refreshOnLoad: true,
+    styleName: "PivotStyleMedium9",
+  };
+  
+  console.log('📋 Pivot table configuration:');
+  console.log(`  Source worksheet: ${pivotOptions.sourceSheet}`);
+  console.log(`  Source range: ${pivotOptions.sourceRange}`);
+  console.log(`  Target worksheet: ${pivotOptions.targetSheet}`);
+  console.log(`  Anchor cell: ${pivotOptions.anchorCell}`);
+  console.log(`  Row fields: ${pivotOptions.layout.rows?.map(f => f.name).join(', ')}`);
+  console.log(`  Column fields: ${pivotOptions.layout.cols?.map(f => f.name).join(', ')}`);
+  console.log(`  Value fields: ${pivotOptions.layout.values.map(v => `${v.name}(${v.agg})`).join(', ')}`);
+  
+  // Dynamically insert pivot table
+  const enhancedBuffer = await addPivotToWorkbookBuffer(baseBuffer, pivotOptions);
+  
+  console.log('✅ Pivot table insertion completed');
+  
+  // Step 4: Output final file
+  console.log('💾 Step 4: Outputting final Excel file...');
+  
+  const finalFilename = 'dynamic-pivot-workbook.xlsx';
+  fs.writeFileSync(finalFilename, new Uint8Array(enhancedBuffer));
+  
+  console.log(`✅ Final file ${finalFilename} generated`);
+  console.log('📊 File size:', (enhancedBuffer.byteLength / 1024).toFixed(2), 'KB');
+  console.log('📈 File size change:', ((enhancedBuffer.byteLength - baseBuffer.byteLength) / 1024).toFixed(2), 'KB');
+  
+  // Step 5: Verify results
+  console.log('🔍 Step 5: Verifying results...');
+  
+  // Check if file exists
+  if (fs.existsSync(finalFilename)) {
+    console.log('✅ Final file exists');
+    
+    // Check file size
+    const stats = fs.statSync(finalFilename);
+    console.log(`✅ File size: ${(stats.size / 1024).toFixed(2)} KB`);
+    
+    console.log('🎉 Dynamic pivot table creation completed!');
+  }
+  
+  return finalFilename;
+}
+
+// Execute function
+createDynamicPivotTable().then(filename => {
+  console.log(`\n🎯 Complete! Please open ${filename} to check the pivot table.`);
+  console.log('The pivot table should appear at cell A3 in the Pivot worksheet.');
+  console.log('After modifying data in the "Data" worksheet, you can right-click on the pivot table and select "Refresh" to update.');
+}).catch(console.error);
+```
+
+##### Quick Version
+
+If you only need a basic dynamic pivot table, you can use this simplified version:
+
 ```typescript
 // Create base workbook
 const workbook = new Workbook();
