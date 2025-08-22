@@ -19,13 +19,27 @@ export { WorksheetProtection, WorkbookProtection } from './protection';
 export { ChartImpl, ChartFactory } from './charts';
 
 // 匯出 Pivot Table 相關類別
-export { PivotTableImpl } from './pivot-table';
+export { PivotTableImpl } from './pivot-table-impl';
 
 // 匯出工作簿相關類別
 export { WorkbookImpl } from './workbook';
 
 // 匯出 XML 生成器
 export * from './xml-builders';
+
+// 匯出錯誤處理系統
+export * from './errors';
+
+// 匯出效能優化功能
+export * from './performance-optimizer';
+
+// 匯出讀取功能介面（暫時註解，避免構建錯誤）
+// export * from './reader';
+
+// 匯出 XML 解析器
+export * from './xml-parser';
+
+
 
 // 主要匯出
 import { WorkbookImpl } from './workbook';

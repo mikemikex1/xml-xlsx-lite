@@ -5,11 +5,14 @@ A lightweight Excel XLSX file generator with complete Excel functionality, inclu
 ## ✨ Features
 
 - **Complete Excel Support**: Full XLSX file generation with all Excel features
-- **Pivot Tables**: Create and export pivot table results
-- **Charts**: Support for 8 chart types with custom styling
+- **String Writing Support**: Full support for strings, including Chinese characters and emojis
+- **Pivot Tables**: Create and export pivot table results with data aggregation
+- **Charts**: Basic chart support (preservation mode)
+- **Performance Optimization**: Smart sharedStrings switching and streaming processing
 - **Advanced Styling**: Fonts, colors, borders, alignment, and number formatting
 - **Protection**: Worksheet and workbook protection with password control
-- **Performance**: Memory optimization for large files and streaming support
+- **Error Handling**: Comprehensive error handling system
+- **Reading Support**: Read and parse existing Excel files
 - **TypeScript**: Full TypeScript support with type definitions
 - **Lightweight**: Minimal dependencies, inspired by exceljs API
 

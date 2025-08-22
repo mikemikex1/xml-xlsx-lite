@@ -6,7 +6,7 @@ import { Cell, CellOptions } from './types';
 export class CellModel implements Cell {
   address: string;
   value: number | string | boolean | Date | null;
-  type: 'n' | 's' | 'b' | 'd' | null;
+  type: 'n' | 's' | 'b' | 'd' | 'inlineStr' | null;
   options: CellOptions;
 
   constructor(address: string) {

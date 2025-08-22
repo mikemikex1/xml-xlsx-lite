@@ -120,8 +120,8 @@ export function buildSheetXml(ws: Worksheet, index: number, sstMap: Map<string, 
     for (const c of cols) {
       const cell = rowMap.get(c)!;
       const raddr = cell.address; // e.g., "B12"
-      const { t, v } = buildCellValue(cell, sstMap);
-      const tAttr = t ? ` t="${t}"` : "";
+      const cellData = buildCellValue(cell, sstMap);
+      const tAttr = cellData.t ? ` t="${cellData.t}"` : "";
       
       // 添加樣式索引
       const styleId = (workbook as any)._getStyleIndex(cell.options);
@@ -133,8 +133,12 @@ export function buildSheetXml(ws: Worksheet, index: number, sstMap: Map<string, 
       // 如果有公式，不輸出值標籤；否則輸出值標籤
       if (cell.options.formula) {
         parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}/>`);
+      } else if (cellData.isInlineStr) {
+        // 處理 inlineStr 字串
+        const spaceAttr = cellData.preserveSpace ? ' xml:space="preserve"' : '';
+        parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}><is><t${spaceAttr}>${cellData.inlineStrValue}</t></is></c>`);
       } else {
-        parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}><v>${v}</v></c>`);
+        parts.push(`<c r="${raddr}"${tAttr}${styleAttr}${formulaAttr}><v>${cellData.v}</v></c>`);
       }
     }
     parts.push("</row>");
@@ -159,7 +163,7 @@ export function buildSheetXml(ws: Worksheet, index: number, sstMap: Map<string, 
 /**
  * 建立儲存格值
  */
-function buildCellValue(cell: Cell, sstMap: Map<string, number>): { t: string | null; v: string } {
+function buildCellValue(cell: Cell, sstMap: Map<string, number>): { t: string | null; v: string; isInlineStr?: boolean; inlineStrValue?: string; preserveSpace?: boolean } {
   const val = cell.value;
   
   // Phase 3: 公式支援
@@ -171,16 +175,36 @@ function buildCellValue(cell: Cell, sstMap: Map<string, number>): { t: string | 
   if (val === null || val === undefined) return { t: null, v: "" };
   if (typeof val === "number") return { t: "n", v: String(val) };
   if (typeof val === "boolean") return { t: "b", v: val ? "1" : "0" };
-  if (isDate(val)) return { t: "n", v: String(excelSerialFromDate(val)) };
-  // string: add to shared strings
-  let sIdx: number;
-  const key = String(val);
-  if (sstMap.has(key)) sIdx = sstMap.get(key)!;
-  else {
-    sIdx = sstMap.size;
-    sstMap.set(key, sIdx);
+  if (isDate(val)) return { t: "d", v: String(excelSerialFromDate(val)) };
+  
+  // 字串處理：支援 inlineStr 和 sharedStrings
+  if (typeof val === "string") {
+    // 檢查是否應該使用 inlineStr（空字串或短字串）
+    if (val === "" || val.length < 50) {
+      const escapedValue = escapeXmlText(val);
+      const preserveSpace = val !== val.trim();
+      return { 
+        t: "inlineStr", 
+        v: "", 
+        isInlineStr: true, 
+        inlineStrValue: escapedValue,
+        preserveSpace 
+      };
+    } else {
+      // 長字串使用 sharedStrings
+      let sIdx: number;
+      const key = String(val);
+      if (sstMap.has(key)) sIdx = sstMap.get(key)!;
+      else {
+        sIdx = sstMap.size;
+        sstMap.set(key, sIdx);
+      }
+      return { t: "s", v: String(sIdx) };
+    }
   }
-  return { t: "s", v: String(sIdx) };
+  
+  // 預設為字串
+  return { t: "inlineStr", v: "", isInlineStr: true, inlineStrValue: String(val) };
 }
 
 /**

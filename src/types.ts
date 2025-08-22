@@ -53,7 +53,7 @@ export interface CellOptions {
 export interface Cell {
   address: string;
   value: number | string | boolean | Date | null;
-  type: 'n' | 's' | 'b' | 'd' | null;
+  type: 'n' | 's' | 'b' | 'd' | 'inlineStr' | null;
   options: CellOptions;
 }
 

@@ -11,7 +11,7 @@ export default defineConfig({
   clean: true,
   minify: false,
   treeshake: true,
-  external: ['jszip'],
+  external: ['jszip', 'fs'],
   globalName: 'XmlXlsxLite',
   outExtension({ format }) {
     return {

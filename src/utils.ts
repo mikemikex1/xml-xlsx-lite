@@ -65,12 +65,13 @@ export function excelSerialFromDate(d: Date): number {
 /**
  * 取得儲存格類型
  */
-export function getCellType(value: any): 'n' | 's' | 'b' | 'd' | null {
+export function getCellType(value: any): 'n' | 's' | 'b' | 'd' | 'inlineStr' | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "number") return "n";
   if (typeof value === "boolean") return "b";
-  if (isDate(value)) return "n"; // we will write as serial number for now
-  return "s"; // default: string
+  if (isDate(value)) return "d";
+  if (typeof value === "string") return "inlineStr";
+  return "inlineStr"; // default: string
 }
 
 /**

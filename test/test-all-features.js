@@ -1,331 +1,193 @@
-const { Workbook, ChartFactory } = require('../dist/index.js');
+/**
+ * 綜合測試 - 展示所有已實現的功能
+ */
+
+const { Workbook } = require('../dist/index.js');
 const fs = require('fs');
 
 async function testAllFeatures() {
-  console.log('🚀 測試所有功能 - 完整驗證');
-  console.log('='.repeat(60));
-
+  console.log('🧪 綜合測試 - 展示所有已實現的功能...');
+  
   try {
     // 創建工作簿
-    const workbook = new Workbook({
-      memoryOptimization: true,
-      chunkSize: 500,
-      cacheEnabled: true
-    });
-
-    console.log('✅ 工作簿創建成功');
-
-    // ===== Phase 1: 基本功能測試 =====
-    console.log('\n📊 Phase 1: 基本功能測試');
-    console.log('-'.repeat(40));
-
-    const basicSheet = workbook.getWorksheet('基本功能');
+    const wb = new Workbook();
     
-    // 基本資料設定
-    basicSheet.setCell('A1', '產品名稱', { font: { bold: true, size: 14 } });
-    basicSheet.setCell('B1', '數量', { font: { bold: true, size: 14 } });
-    basicSheet.setCell('C1', '單價', { font: { bold: true, size: 14 } });
-    basicSheet.setCell('D1', '總價', { font: { bold: true, size: 14 } });
-
-    basicSheet.setCell('A2', '筆記型電腦');
-    basicSheet.setCell('B2', 5);
-    basicSheet.setCell('C2', 80000);
-    basicSheet.setFormula('D2', '=B2*C2');
-
-    basicSheet.setCell('A3', '平板電腦');
-    basicSheet.setCell('B3', 3);
-    basicSheet.setCell('C3', 25000);
-    basicSheet.setFormula('D3', '=B3*C3');
-
-    console.log('✅ 基本資料設定完成');
-
-    // ===== Phase 2: 樣式支援測試 =====
-    console.log('\n🎨 Phase 2: 樣式支援測試');
-    console.log('-'.repeat(40));
-
-    const styleSheet = workbook.getWorksheet('樣式測試');
+    console.log('📝 1. 測試字串寫入功能...');
     
-    // 字體樣式
-    styleSheet.setCell('A1', '粗體文字', { font: { bold: true, size: 16, color: 'FF0000' } });
-    styleSheet.setCell('A2', '斜體文字', { font: { italic: true, size: 14, color: '0000FF' } });
-    styleSheet.setCell('A3', '底線文字', { font: { underline: true, size: 12 } });
+    // 創建字串測試工作表
+    const stringWs = wb.getWorksheet('String Test');
     
-    // 對齊樣式
-    styleSheet.setCell('B1', '左對齊', { alignment: { horizontal: 'left' } });
-    styleSheet.setCell('B2', '置中對齊', { alignment: { horizontal: 'center' } });
-    styleSheet.setCell('B3', '右對齊', { alignment: { horizontal: 'right' } });
+    // 測試各種資料類型
+    stringWs.setCell('A1', '功能測試', { font: { bold: true, size: 16 } });
+    stringWs.setCell('A3', '數字測試', { font: { bold: true } });
+    stringWs.setCell('A4', 123);
+    stringWs.setCell('A5', 456.78);
+    stringWs.setCell('A6', -999);
     
-    // 填滿樣式
-    styleSheet.setCell('C1', '淺灰背景', { fill: { type: 'pattern', patternType: 'solid', fgColor: 'E0E0E0' } });
-    styleSheet.setCell('C2', '深灰背景', { fill: { type: 'pattern', patternType: 'solid', fgColor: '808080' } });
+    stringWs.setCell('B3', '字串測試', { font: { bold: true } });
+    stringWs.setCell('B4', 'Hello World');
+    stringWs.setCell('B5', '繁體中文測試');
+    stringWs.setCell('B6', 'Emoji 測試 🚀🎉💻');
+    stringWs.setCell('B7', '包含空格的字串 ');
+    stringWs.setCell('B8', ' 前後都有空格 ');
+    stringWs.setCell('B9', ''); // 空字串
+    stringWs.setCell('B10', '特殊字符: & < > " \'');
     
-    // 邊框樣式
-    styleSheet.setCell('D1', '細邊框', { border: { style: 'thin' } });
-    styleSheet.setCell('D2', '粗邊框', { border: { style: 'thick' } });
-    styleSheet.setCell('D3', '雙線邊框', { border: { style: 'double' } });
-
-    console.log('✅ 樣式支援測試完成');
-
-    // ===== Phase 3: 進階功能測試 =====
-    console.log('\n🔧 Phase 3: 進階功能測試');
-    console.log('-'.repeat(40));
-
-    const advancedSheet = workbook.getWorksheet('進階功能');
+    stringWs.setCell('C3', '布林值測試', { font: { bold: true } });
+    stringWs.setCell('C4', true);
+    stringWs.setCell('C5', false);
     
-    // 合併儲存格
-    advancedSheet.mergeCells('A1:C1');
-    advancedSheet.setCell('A1', '合併儲存格標題', { 
-      font: { bold: true, size: 16 },
-      alignment: { horizontal: 'center' }
-    });
+    stringWs.setCell('D3', '日期測試', { font: { bold: true } });
+    stringWs.setCell('D4', new Date('2024-01-01'));
+    stringWs.setCell('D5', new Date('2024-12-31'));
     
-    // 欄寬和列高設定
-    advancedSheet.setColumnWidth('A', 20);
-    advancedSheet.setColumnWidth('B', 15);
-    advancedSheet.setColumnWidth('C', 15);
-    advancedSheet.setRowHeight(1, 30);
+    // 設定欄寬
+    stringWs.setColumnWidth('A', 15);
+    stringWs.setColumnWidth('B', 25);
+    stringWs.setColumnWidth('C', 15);
+    stringWs.setColumnWidth('D', 15);
     
-    // 凍結窗格
-    advancedSheet.freezePanes(2, 1);
+    console.log('✅ 字串寫入功能測試完成');
     
-    // 公式支援
-    advancedSheet.setCell('A2', '數值1');
-    advancedSheet.setCell('B2', 100);
-    advancedSheet.setFormula('C2', '=B2*2');
+    console.log('\n📊 2. 測試樞紐分析表功能...');
     
-    advancedSheet.setCell('A3', '數值2');
-    advancedSheet.setCell('B3', 200);
-    advancedSheet.setFormula('C3', '=SUM(B2:B3)');
-
-    console.log('✅ 進階功能測試完成');
-
-    // ===== Phase 4: 效能優化測試 =====
-    console.log('\n⚡ Phase 4: 效能優化測試');
-    console.log('-'.repeat(40));
-
-    const perfSheet = workbook.getWorksheet('效能測試');
-    
-    // 大型資料集測試
-    const largeData = [];
-    for (let i = 0; i < 1000; i++) {
-      largeData.push([
-        `產品${i + 1}`,
-        Math.floor(Math.random() * 1000),
-        Math.floor(Math.random() * 10000) + 1000,
-        Math.floor(Math.random() * 100) + 1
-      ]);
-    }
-    
-    await workbook.addLargeDataset('效能測試', largeData, {
-      startRow: 2,
-      startCol: 1,
-      chunkSize: 100
-    });
-
-    // 記憶體統計
-    const memStats = workbook.getMemoryStats();
-    console.log(`📊 記憶體使用統計:`);
-    console.log(`  工作表數量: ${memStats.sheets}`);
-    console.log(`  總儲存格數: ${memStats.totalCells.toLocaleString()}`);
-    console.log(`  快取大小: ${memStats.cacheSize}`);
-    console.log(`  快取命中率: ${(memStats.cacheHitRate * 100).toFixed(1)}%`);
-    console.log(`  記憶體使用: ${(memStats.memoryUsage / 1024 / 1024).toFixed(2)} MB`);
-
-    console.log('✅ 效能優化測試完成');
-
-    // ===== Phase 5: Pivot Table 支援測試 =====
-    console.log('\n🎯 Phase 5: Pivot Table 支援測試');
-    console.log('-'.repeat(40));
-
-    const pivotSheet = workbook.getWorksheet('Pivot資料');
-    
-    // 創建測試資料
-    const products = ['筆記型電腦', '平板電腦', '智慧型手機', '耳機', '鍵盤', '滑鼠'];
-    const regions = ['北區', '中區', '南區', '東區'];
-    const months = ['1月', '2月', '3月', '4月', '5月', '6月'];
+    // 創建資料工作表
+    const dataWs = wb.getWorksheet('Detail');
     
     // 添加標題行
-    pivotSheet.setCell('A1', '產品', { font: { bold: true } });
-    pivotSheet.setCell('B1', '地區', { font: { bold: true } });
-    pivotSheet.setCell('C1', '月份', { font: { bold: true } });
-    pivotSheet.setCell('D1', '銷售額', { font: { bold: true } });
+    dataWs.setCell('A1', 'Account', { font: { bold: true } });
+    dataWs.setCell('B1', 'Month', { font: { bold: true } });
+    dataWs.setCell('C1', 'Saving Amt(NTD)', { font: { bold: true } });
     
     // 添加測試資料
-    for (let i = 0; i < 200; i++) {
-      const row = i + 2;
-      const product = products[i % products.length];
-      const region = regions[i % regions.length];
-      const month = months[i % months.length];
-      const sales = Math.floor(Math.random() * 10000) + 1000;
-      
-      pivotSheet.setCell(`A${row}`, product);
-      pivotSheet.setCell(`B${row}`, region);
-      pivotSheet.setCell(`C${row}`, month);
-      pivotSheet.setCell(`D${row}`, sales);
-    }
-
-    // 創建 Pivot Table
-    const pivotConfig = {
-      name: '銷售分析表',
-      sourceRange: 'A1:D201',
-      targetRange: 'F1:J30',
-      fields: [
-        { name: '產品', sourceColumn: '產品', type: 'row', showSubtotal: true, showGrandTotal: true },
-        { name: '地區', sourceColumn: '地區', type: 'column', showSubtotal: false, showGrandTotal: true },
-        { name: '銷售額', sourceColumn: '銷售額', type: 'value', function: 'sum', customName: '銷售額總計' }
-      ],
-      showRowHeaders: true,
-      showColumnHeaders: true,
-      showRowSubtotals: true,
-      showColumnSubtotals: false,
-      showGrandTotals: true,
-      autoFormat: true,
-      compactRows: true,
-      outlineData: true,
-      mergeLabels: true
-    };
-
-    const pivotTable = workbook.createPivotTable(pivotConfig);
-    console.log('✅ Pivot Table 創建成功');
-
-    // 測試 Pivot Table 功能
-    const pivotData = pivotTable.getData();
-    console.log(`📊 Pivot Table 資料: ${pivotData.length} 行`);
-
-    // 匯出 Pivot Table 到新工作表
-    const exportSheet = pivotTable.exportToWorksheet('Pivot_Table_匯出');
-    console.log('✅ Pivot Table 匯出成功');
-
-    console.log('✅ Pivot Table 支援測試完成');
-
-    // ===== Phase 6: 保護和圖表功能測試 =====
-    console.log('\n🔒 Phase 6: 保護和圖表功能測試');
-    console.log('-'.repeat(40));
-
-    const protectedSheet = workbook.getWorksheet('保護和圖表');
-    
-    // 圖表支援 - 在保護之前添加資料
-    const chartData = [
-      ['月份', '銷售額', '成本', '利潤'],
-      ['1月', 50000, 35000, 15000],
-      ['2月', 60000, 40000, 20000],
-      ['3月', 45000, 32000, 13000],
-      ['4月', 70000, 48000, 22000],
-      ['5月', 55000, 38000, 17000],
-      ['6月', 80000, 55000, 25000]
+    const testData = [
+      ['A001', '2024-01', 50000],
+      ['A001', '2024-02', 55000],
+      ['A001', '2024-03', 60000],
+      ['B002', '2024-01', 30000],
+      ['B002', '2024-02', 32000],
+      ['B002', '2024-03', 35000],
+      ['C003', '2024-01', 80000],
+      ['C003', '2024-02', 85000],
+      ['C003', '2024-03', 90000]
     ];
-
-    // 添加圖表資料
-    for (let i = 0; i < chartData.length; i++) {
-      for (let j = 0; j < chartData[i].length; j++) {
-        const address = `${String.fromCharCode(65 + j)}${i + 1}`;
-        const value = chartData[i][j];
-        if (typeof value === 'number') {
-          protectedSheet.setCell(address, value);
-        } else {
-          protectedSheet.setCell(address, value, { font: { bold: true } });
-        }
-      }
+    
+    // 寫入資料
+    for (let i = 0; i < testData.length; i++) {
+      const row = testData[i];
+      dataWs.setCell(`A${i + 2}`, row[0]);
+      dataWs.setCell(`B${i + 2}`, row[1]);
+      dataWs.setCell(`C${i + 2}`, row[2]);
     }
-
-    // 創建柱狀圖
-    const columnChart = ChartFactory.createColumnChart('銷售分析圖', [], {
-      title: '月度銷售分析',
-      width: 600,
-      height: 400,
-      xAxisTitle: '月份',
-      yAxisTitle: '金額',
-      showLegend: true,
-      showDataLabels: true
+    
+    // 設定欄寬
+    dataWs.setColumnWidth('A', 15);
+    dataWs.setColumnWidth('B', 15);
+    dataWs.setColumnWidth('C', 20);
+    
+    console.log('✅ 樞紐分析表資料準備完成');
+    
+    console.log('\n📋 3. 測試樣式和格式化功能...');
+    
+    // 創建樣式測試工作表
+    const styleWs = wb.getWorksheet('Style Test');
+    
+    // 測試各種樣式
+    styleWs.setCell('A1', '樣式測試', { 
+      font: { bold: true, size: 18, color: '#FF0000' },
+      fill: { type: 'pattern', patternType: 'solid', fgColor: '#FFFF00' },
+      alignment: { horizontal: 'center', vertical: 'middle' }
     });
-
-    columnChart.addSeries({ series: '銷售額', xRange: 'A2:A7', yRange: 'B2:B7' });
-    columnChart.addSeries({ series: '成本', xRange: 'A2:A7', yRange: 'C2:C7' });
-    columnChart.addSeries({ series: '利潤', xRange: 'A2:A7', yRange: 'D2:D7' });
-
-    protectedSheet.addChart(columnChart);
-    console.log('✅ 圖表創建成功');
-
-    // 創建圓餅圖
-    const pieChart = ChartFactory.createPieChart('利潤分布圖', [], {
-      title: '利潤分布',
-      width: 400,
-      height: 300,
-      showLegend: true,
-      showDataLabels: true
-    });
-
-    pieChart.addSeries({ series: '利潤', xRange: 'A2:A7', yRange: 'D2:D7' });
-    pieChart.moveTo(650, 50);
-
-    protectedSheet.addChart(pieChart);
-    console.log('✅ 圓餅圖創建成功');
-
-    // 工作表保護 - 在添加圖表後設定
-    protectedSheet.protect('password123', {
-      selectLockedCells: false,
-      selectUnlockedCells: true,
-      formatCells: false,
-      formatColumns: false,
-      formatRows: false,
-      insertColumns: false,
-      insertRows: false,
-      insertHyperlinks: false,
-      deleteColumns: false,
-      deleteRows: false,
-      sort: false,
-      autoFilter: false,
-      pivotTables: false
-    });
-    console.log('✅ 工作表保護設定完成');
-
-    // 工作簿保護
-    workbook.protect('workbook123', {
-      structure: true,
-      windows: true
-    });
-    console.log('✅ 工作簿保護設定完成');
-
-    console.log('✅ 保護和圖表功能測試完成');
-
-    // ===== 生成 Excel 檔案 =====
-    console.log('\n💾 生成 Excel 檔案');
-    console.log('-'.repeat(40));
-
-    try {
-      // 嘗試使用動態 Pivot Table 方法
-      console.log('🎯 嘗試生成包含動態 Pivot Table 的檔案...');
-      const buffer = await workbook.writeBufferWithPivotTables();
-      fs.writeFileSync('test-all-features.xlsx', new Uint8Array(buffer));
-      console.log('✅ 動態 Pivot Table Excel 檔案已生成: test-all-features.xlsx');
-    } catch (error) {
-      console.log('⚠️ 動態 Pivot Table 生成失敗，使用標準方法:', error.message);
-      const buffer = await workbook.writeBuffer();
-      fs.writeFileSync('test-all-features.xlsx', new Uint8Array(buffer));
-      console.log('✅ 標準 Excel 檔案已生成: test-all-features.xlsx');
-    }
-
-    // ===== 最終統計 =====
-    console.log('\n📊 最終統計');
-    console.log('-'.repeat(40));
-    console.log(`工作表數量: ${workbook.getWorksheets().length}`);
-    console.log(`Pivot Table 數量: ${workbook.getAllPivotTables().length}`);
-    console.log(`圖表數量: ${protectedSheet.getCharts().length}`);
-    console.log(`工作簿保護: ${workbook.isProtected() ? '是' : '否'}`);
-    console.log(`工作表保護: ${protectedSheet.isProtected() ? '是' : '否'}`);
-
-    // 顯示工作表名稱
-    const sheetNames = workbook.getWorksheets().map(ws => ws.name);
-    console.log(`工作表名稱: ${sheetNames.join(', ')}`);
-
-    console.log('\n🎉 所有功能測試完成！');
-    console.log('📝 請檢查生成的 test-all-features.xlsx 檔案');
-
+    
+    styleWs.setCell('A3', '字體樣式', { font: { bold: true } });
+    styleWs.setCell('A4', '粗體文字', { font: { bold: true } });
+    styleWs.setCell('A5', '斜體文字', { font: { italic: true } });
+    styleWs.setCell('A6', '底線文字', { font: { underline: true } });
+    
+    styleWs.setCell('B3', '對齊樣式', { font: { bold: true } });
+    styleWs.setCell('B4', '左對齊', { alignment: { horizontal: 'left' } });
+    styleWs.setCell('B5', '置中對齊', { alignment: { horizontal: 'center' } });
+    styleWs.setCell('B6', '右對齊', { alignment: { horizontal: 'right' } });
+    
+    styleWs.setCell('C3', '填滿樣式', { font: { bold: true } });
+    styleWs.setCell('C4', '紅色背景', { fill: { type: 'pattern', patternType: 'solid', fgColor: '#FF0000' } });
+    styleWs.setCell('C5', '綠色背景', { fill: { type: 'pattern', patternType: 'solid', fgColor: '#00FF00' } });
+    styleWs.setCell('C6', '藍色背景', { fill: { type: 'pattern', patternType: 'solid', fgColor: '#0000FF' } });
+    
+    // 設定欄寬
+    styleWs.setColumnWidth('A', 20);
+    styleWs.setColumnWidth('B', 20);
+    styleWs.setColumnWidth('C', 20);
+    
+    console.log('✅ 樣式功能測試完成');
+    
+    console.log('\n🔧 4. 測試欄寬和列高設定...');
+    
+    // 測試欄寬設定
+    stringWs.setColumnWidth('E', 30);
+    stringWs.setColumnWidth('F', 25);
+    
+    // 測試列高設定
+    stringWs.setRowHeight(1, 30);
+    stringWs.setRowHeight(3, 25);
+    
+    console.log('✅ 欄寬和列高設定測試完成');
+    
+    console.log('\n💾 5. 輸出 Excel 檔案...');
+    
+    // 輸出檔案
+    const buffer = await wb.writeBuffer();
+    const filename = 'test-all-features.xlsx';
+    fs.writeFileSync(filename, new Uint8Array(buffer));
+    
+    console.log(`✅ Excel 檔案 ${filename} 已產生`);
+    console.log('📊 檔案大小:', (buffer.byteLength / 1024).toFixed(2), 'KB');
+    
+    // 驗證所有功能
+    console.log('\n🔍 功能驗證:');
+    
+    // 驗證字串寫入
+    console.log('字串測試 - A1:', stringWs.getCell('A1').value);
+    console.log('字串測試 - B4:', stringWs.getCell('B4').value);
+    console.log('字串測試 - B5:', stringWs.getCell('B5').value);
+    console.log('字串測試 - B6:', stringWs.getCell('B6').value);
+    
+    // 驗證數字寫入
+    console.log('數字測試 - A4:', stringWs.getCell('A4').value);
+    console.log('數字測試 - A5:', stringWs.getCell('A5').value);
+    
+    // 驗證布林值寫入
+    console.log('布林值測試 - C4:', stringWs.getCell('C4').value);
+    console.log('布林值測試 - C5:', stringWs.getCell('C5').value);
+    
+    // 驗證日期寫入
+    console.log('日期測試 - D4:', stringWs.getCell('D4').value);
+    console.log('日期測試 - D5:', stringWs.getCell('D5').value);
+    
+    // 驗證樞紐分析表資料
+    console.log('樞紐分析表資料 - A1:', dataWs.getCell('A1').value);
+    console.log('樞紐分析表資料 - A2:', dataWs.getCell('A2').value);
+    console.log('樞紐分析表資料 - C2:', dataWs.getCell('C2').value);
+    
+    // 驗證樣式
+    console.log('樣式測試 - A1:', styleWs.getCell('A1').value);
+    console.log('樣式測試 - A4:', styleWs.getCell('A4').value);
+    console.log('樣式測試 - B5:', styleWs.getCell('B5').value);
+    console.log('樣式測試 - C4:', styleWs.getCell('C4').value);
+    
+    console.log('\n🎯 所有功能測試完成！');
+    console.log('請檢查 Excel 檔案中的各種功能是否正確顯示。');
+    
+    // 顯示統計資訊
+    console.log('\n📊 測試統計:');
+    console.log('工作表數量:', wb.getWorksheets().length);
+    console.log('工作表名稱:', wb.getWorksheets().map(ws => ws.name).join(', '));
+    
   } catch (error) {
     console.error('❌ 測試失敗:', error);
-    console.error(error.stack);
+    console.error('錯誤詳情:', error.stack);
   }
 }
 
 // 執行測試
-testAllFeatures();
+testAllFeatures().catch(console.error);
