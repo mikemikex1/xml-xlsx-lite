@@ -11,6 +11,7 @@ build/
 
 # Test outputs
 test/output/
+test/out/
 test/browser/
 
 # Excel files and test outputs
@@ -19,6 +20,9 @@ test/browser/
 test-*.xlsx
 fixed-*.xlsx
 test-simple-*.xlsx
+comprehensive-test.xlsx
+dynamic-pivot-workbook.xlsx
+base-workbook.xlsx
 
 # IDE
 .vscode/
