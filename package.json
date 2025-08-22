@@ -1,7 +1,7 @@
 {
   "name": "xml-xlsx-lite",
 
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "🚀 Lightweight Excel XLSX generator with full Excel features: dynamic pivot tables, charts, styles, and Chinese support. Fast, TypeScript-friendly Excel file creation library. | 輕量級 Excel XLSX 生成器，支援樞紐分析表、圖表、樣式，完整繁體中文支援。",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
