@@ -378,7 +378,7 @@ import { Workbook } from 'xml-xlsx-lite';
 
 ## 📚 Documentation
 
-- **API Reference**: [README-API.md](./README-API.md)
+- **API Reference**: [README-API.md](./README-API.md) | [English Version](./README-API-EN.md)
 - **Dynamic Pivot Tables**: [DYNAMIC_PIVOT_USAGE.md](./DYNAMIC_PIVOT_USAGE.md)
 - **Usage Guide**: [USAGE_GUIDE_FIXED.md](./USAGE_GUIDE_FIXED.md)
 - **Pivot Table Fix**: [PIVOT_TABLE_FIX_REPORT.md](./PIVOT_TABLE_FIX_REPORT.md)
