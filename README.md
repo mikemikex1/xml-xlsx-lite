@@ -6,6 +6,7 @@ A lightweight Excel XLSX file generator with complete Excel functionality, inclu
 
 - **Complete Excel Support**: Full XLSX file generation with all Excel features
 - **String Writing Support**: Full support for strings, including Chinese characters and emojis
+- **Dynamic Pivot Tables**: Insert native Excel pivot tables into existing workbooks
 - **Pivot Tables**: Create and export pivot table results with data aggregation
 - **Charts**: Basic chart support (preservation mode)
 - **Performance Optimization**: Smart sharedStrings switching and streaming processing
@@ -100,7 +101,47 @@ async function main(): Promise<void> {
 main();
 ```
 
-## 📊 Pivot Table Example
+## 📊 Dynamic Pivot Table Example
+
+```javascript
+const { addPivotToWorkbookBuffer } = require('xml-xlsx-lite');
+const fs = require('fs');
+
+async function createDynamicPivot() {
+  // Read existing workbook
+  const baseBuffer = fs.readFileSync('base-workbook.xlsx');
+  
+  // Configure pivot table
+  const pivotOptions = {
+    sourceSheet: "Data",
+    sourceRange: "A1:D100",
+    targetSheet: "Pivot",
+    anchorCell: "A3",
+    layout: {
+      rows: [{ name: "Department" }],
+      cols: [{ name: "Month" }],
+      values: [{ 
+        name: "Sales", 
+        agg: "sum", 
+        displayName: "Total Sales" 
+      }]
+    },
+    refreshOnLoad: true,
+    styleName: "PivotStyleMedium9"
+  };
+  
+  // Insert dynamic pivot table
+  const enhancedBuffer = await addPivotToWorkbookBuffer(baseBuffer, pivotOptions);
+  
+  // Save result
+  fs.writeFileSync('pivot-workbook.xlsx', enhancedBuffer);
+  console.log('Dynamic pivot table inserted!');
+}
+
+createDynamicPivot();
+```
+
+## 📊 Manual Pivot Table Example
 
 ```javascript
 const { Workbook } = require('xml-xlsx-lite');
@@ -152,6 +193,7 @@ async function createPivotTable() {
     const rowNum = index + 4;
     pivotSheet.setCell(`A${rowNum}`, row[0]);
     pivotSheet.setCell(`B${rowNum}`, row[1], { numFmt: '#,##0' });
+    pivotSheet.setCell(`C${rowNum}`, row[2], { numFmt: '#,##0' });
     pivotSheet.setCell(`C${rowNum}`, row[2], { numFmt: '#,##0' });
     pivotSheet.setCell(`D${rowNum}`, row[3], { 
       numFmt: '#,##0',
@@ -337,6 +379,7 @@ import { Workbook } from 'xml-xlsx-lite';
 ## 📚 Documentation
 
 - **API Reference**: [README-API.md](./README-API.md)
+- **Dynamic Pivot Tables**: [DYNAMIC_PIVOT_USAGE.md](./DYNAMIC_PIVOT_USAGE.md)
 - **Usage Guide**: [USAGE_GUIDE_FIXED.md](./USAGE_GUIDE_FIXED.md)
 - **Pivot Table Fix**: [PIVOT_TABLE_FIX_REPORT.md](./PIVOT_TABLE_FIX_REPORT.md)
 

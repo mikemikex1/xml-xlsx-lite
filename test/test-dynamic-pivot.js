@@ -1,211 +1,179 @@
-const { Workbook } = require('../dist/index.js');
+/**
+ * 測試動態樞紐分析表功能
+ * 展示如何在既有 Excel 檔案上動態插入樞紐分析表
+ */
+
+const { Workbook, addPivotToWorkbookBuffer, CreatePivotOptions } = require('../dist/index.js');
 const fs = require('fs');
 
-async function testDynamicPivotTable() {
-  console.log('🎯 測試動態 Pivot Table 功能');
-  console.log('='.repeat(50));
-
+async function testDynamicPivot() {
+  console.log('🧪 測試動態樞紐分析表功能...');
+  
   try {
-    // 創建工作簿
-    const workbook = new Workbook();
+    // 步驟 1: 創建基礎工作簿（包含資料和空白樞紐分析表工作表）
+    console.log('📝 1. 創建基礎工作簿...');
+    
+    const wb = new Workbook();
     
     // 創建資料工作表
-    const dataSheet = workbook.getWorksheet('銷售資料');
+    const dataWs = wb.getWorksheet('數據');
     
     // 添加標題行
-    dataSheet.setCell('A1', '產品', { font: { bold: true } });
-    dataSheet.setCell('B1', '地區', { font: { bold: true } });
-    dataSheet.setCell('C1', '月份', { font: { bold: true } });
-    dataSheet.setCell('D1', '銷售額', { font: { bold: true } });
+    dataWs.setCell('A1', '部門', { font: { bold: true } });
+    dataWs.setCell('B1', '月份', { font: { bold: true } });
+    dataWs.setCell('C1', '產品', { font: { bold: true } });
+    dataWs.setCell('D1', '銷售額', { font: { bold: true } });
     
     // 添加測試資料
-    const products = ['筆記型電腦', '平板電腦', '智慧型手機', '耳機'];
-    const regions = ['北區', '中區', '南區', '東區'];
-    const months = ['1月', '2月', '3月', '4月'];
+    const testData = [
+      ['IT', '一月', '軟體', 50000],
+      ['IT', '一月', '硬體', 30000],
+      ['IT', '二月', '軟體', 60000],
+      ['IT', '二月', '硬體', 35000],
+      ['HR', '一月', '培訓', 20000],
+      ['HR', '一月', '招募', 15000],
+      ['HR', '二月', '培訓', 25000],
+      ['HR', '二月', '招募', 18000],
+      ['財務', '一月', '審計', 40000],
+      ['財務', '一月', '稅務', 25000],
+      ['財務', '二月', '審計', 45000],
+      ['財務', '二月', '稅務', 30000]
+    ];
     
-    console.log('📊 正在生成測試資料...');
-    for (let i = 0; i < 500; i++) {
-      const row = i + 2;
-      const product = products[i % products.length];
-      const region = regions[i % regions.length];
-      const month = months[i % months.length];
-      const sales = Math.floor(Math.random() * 10000) + 1000;
-      
-      dataSheet.setCell(`A${row}`, product);
-      dataSheet.setCell(`B${row}`, region);
-      dataSheet.setCell(`C${row}`, month);
-      dataSheet.setCell(`D${row}`, sales);
-      
-      if (i % 100 === 0) {
-        console.log(`已生成 ${i} 筆資料...`);
-      }
+    // 寫入資料
+    for (let i = 0; i < testData.length; i++) {
+      const row = testData[i];
+      dataWs.setCell(`A${i + 2}`, row[0]);
+      dataWs.setCell(`B${i + 2}`, row[1]);
+      dataWs.setCell(`C${i + 2}`, row[2]);
+      dataWs.setCell(`D${i + 2}`, row[3], { numFmt: '#,##0' });
     }
-    console.log('✅ 500筆測試資料生成完成');
-
-    // 創建 Pivot Table 配置
-    const pivotConfig = {
-      name: '銷售分析表',
-      sourceRange: 'A1:D501',
-      targetRange: 'F1:J30',
-      fields: [
-        {
-          name: '產品',
-          sourceColumn: '產品',
-          type: 'row',
-          showSubtotal: true,
-          showGrandTotal: true
-        },
-        {
-          name: '地區',
-          sourceColumn: '地區',
-          type: 'column',
-          showSubtotal: false,
-          showGrandTotal: true
-        },
-        {
-          name: '銷售額',
-          sourceColumn: '銷售額',
-          type: 'value',
-          function: 'sum',
-          customName: '銷售額總計'
+    
+    // 設定欄寬
+    dataWs.setColumnWidth('A', 15);
+    dataWs.setColumnWidth('B', 12);
+    dataWs.setColumnWidth('C', 15);
+    dataWs.setColumnWidth('D', 15);
+    
+    // 創建空白樞紐分析表工作表
+    const pivotWs = wb.getWorksheet('Pivot');
+    
+    // 添加標題
+    pivotWs.setCell('A1', '樞紐分析表', { font: { bold: true, size: 16 } });
+    pivotWs.setCell('A2', '（此處將插入動態樞紐分析表）', { font: { italic: true, color: '808080' } });
+    
+    // 設定欄寬
+    pivotWs.setColumnWidth('A', 30);
+    
+    console.log('✅ 基礎工作簿創建完成');
+    
+    // 步驟 2: 輸出基礎 Excel 檔案
+    console.log('\n💾 2. 輸出基礎 Excel 檔案...');
+    
+    const baseBuffer = await wb.writeBuffer();
+    const baseFilename = 'base-workbook.xlsx';
+    fs.writeFileSync(baseFilename, new Uint8Array(baseBuffer));
+    
+    console.log(`✅ 基礎檔案 ${baseFilename} 已產生`);
+    console.log('📊 檔案大小:', (baseBuffer.byteLength / 1024).toFixed(2), 'KB');
+    
+    // 步驟 3: 使用動態樞紐分析表建構器
+    console.log('\n🔧 3. 動態插入樞紐分析表...');
+    
+         const pivotOptions = {
+      sourceSheet: "數據",
+      sourceRange: "A1:D13",         // 含標題列
+      targetSheet: "Pivot",
+      anchorCell: "A3",
+      layout: {
+        rows: [{ name: "部門" }],
+        cols: [{ name: "月份" }],
+        values: [
+          { 
+            name: "銷售額", 
+            agg: "sum", 
+            displayName: "銷售額合計",
+            numFmtId: 0
+          }
+        ],
+      },
+      refreshOnLoad: true,
+      styleName: "PivotStyleMedium9",
+    };
+    
+    console.log('📋 樞紐分析表配置:');
+    console.log(`  來源工作表: ${pivotOptions.sourceSheet}`);
+    console.log(`  來源範圍: ${pivotOptions.sourceRange}`);
+    console.log(`  目標工作表: ${pivotOptions.targetSheet}`);
+    console.log(`  錨點儲存格: ${pivotOptions.anchorCell}`);
+    console.log(`  行欄位: ${pivotOptions.layout.rows?.map(f => f.name).join(', ') || '無'}`);
+    console.log(`  列欄位: ${pivotOptions.layout.cols?.map(f => f.name).join(', ') || '無'}`);
+    console.log(`  值欄位: ${pivotOptions.layout.values.map(v => `${v.name}(${v.agg})`).join(', ')}`);
+    
+    // 動態插入樞紐分析表
+    const enhancedBuffer = await addPivotToWorkbookBuffer(baseBuffer, pivotOptions);
+    
+    console.log('✅ 樞紐分析表插入完成');
+    
+    // 步驟 4: 輸出最終檔案
+    console.log('\n💾 4. 輸出最終 Excel 檔案...');
+    
+    const finalFilename = 'dynamic-pivot-workbook.xlsx';
+    fs.writeFileSync(finalFilename, new Uint8Array(enhancedBuffer));
+    
+    console.log(`✅ 最終檔案 ${finalFilename} 已產生`);
+    console.log('📊 檔案大小:', (enhancedBuffer.byteLength / 1024).toFixed(2), 'KB');
+    console.log('📈 檔案大小變化:', ((enhancedBuffer.byteLength - baseBuffer.byteLength) / 1024).toFixed(2), 'KB');
+    
+    // 步驟 5: 驗證結果
+    console.log('\n🔍 5. 驗證結果...');
+    
+    // 檢查檔案是否存在
+    if (fs.existsSync(finalFilename)) {
+      console.log('✅ 最終檔案存在');
+      
+      // 檢查檔案大小
+      const stats = fs.statSync(finalFilename);
+      console.log(`✅ 檔案大小: ${(stats.size / 1024).toFixed(2)} KB`);
+      
+      // 檢查檔案是否為有效的 ZIP 檔案（XLSX 本質上是 ZIP）
+      try {
+        const testZip = require('jszip');
+        const testBuffer = fs.readFileSync(finalFilename);
+        const zip = await testZip.loadAsync(testBuffer);
+        
+        // 檢查是否包含樞紐分析表相關檔案
+        const hasPivotCache = zip.file(/pivotCache\/pivotCacheDefinition.*\.xml/).length > 0;
+        const hasPivotTable = zip.file(/pivotTables\/pivotTable.*\.xml/).length > 0;
+        const hasContentTypes = zip.file('[Content_Types].xml').length > 0;
+        
+        console.log('✅ 檔案結構驗證:');
+        console.log(`  樞紐分析表快取定義: ${hasPivotCache ? '✅' : '❌'}`);
+        console.log(`  樞紐分析表定義: ${hasPivotTable ? '✅' : '❌'}`);
+        console.log(`  Content Types: ${hasContentTypes ? '✅' : '❌'}`);
+        
+        if (hasPivotCache && hasPivotTable && hasContentTypes) {
+          console.log('🎉 所有必要檔案都已正確創建！');
         }
-      ],
-      showRowHeaders: true,
-      showColumnHeaders: true,
-      showRowSubtotals: true,
-      showColumnSubtotals: false,
-      showGrandTotals: true,
-      autoFormat: true,
-      compactRows: true,
-      outlineData: true,
-      mergeLabels: true
-    };
-
-    console.log('🎯 正在創建動態 Pivot Table...');
-    
-    // 創建 Pivot Table
-    const pivotTable = workbook.createPivotTable(pivotConfig);
-    console.log('✅ Pivot Table 建立完成');
-    
-    // 測試 Pivot Table 功能
-    console.log('🔧 測試 Pivot Table 功能...');
-    
-    // 取得欄位資訊
-    const productField = pivotTable.getField('產品');
-    console.log('產品欄位:', {
-      name: productField?.name,
-      sourceColumn: productField?.sourceColumn,
-      type: productField?.type,
-      showSubtotal: productField?.showSubtotal,
-      showGrandTotal: productField?.showGrandTotal
-    });
-
-    // 應用篩選
-    console.log('🔍 應用月份篩選...');
-    pivotTable.applyFilter('月份', ['1月', '2月']);
-    console.log('✅ 月份篩選已應用');
-
-    // 取得資料
-    console.log('📊 取得 Pivot Table 資料...');
-    const pivotData = pivotTable.getData();
-    console.log(`✅ 取得 ${pivotData.length} 行資料`);
-
-    // 顯示資料預覽
-    console.log('📋 Pivot Table 資料預覽:');
-    for (let i = 0; i < Math.min(5, pivotData.length); i++) {
-      console.log(`  行 ${i + 1}:`, pivotData[i]);
-    }
-
-    // 測試欄位管理
-    console.log('🔧 測試欄位管理...');
-    
-    // 添加新欄位
-    const newField = {
-      name: '月份',
-      sourceColumn: '月份',
-      type: 'filter',
-      showSubtotal: false,
-      showGrandTotal: false
-    };
-    pivotTable.addField(newField);
-    console.log('✅ 新欄位已添加');
-
-    // 重新整理
-    console.log('🔄 重新整理 Pivot Table...');
-    pivotTable.refresh();
-    const updatedData = pivotTable.getData();
-    console.log(`✅ 更新後資料: ${updatedData.length} 行`);
-
-    // 測試 Pivot Table 管理
-    console.log('📋 Pivot Table 管理測試...');
-    const allPivotTables = workbook.getAllPivotTables();
-    console.log(`總共有 ${allPivotTables.length} 個 Pivot Table`);
-    
-    const retrievedPivotTable = workbook.getPivotTable('銷售分析表');
-    if (retrievedPivotTable) {
-      console.log('✅ 成功取得 Pivot Table: 銷售分析表');
-    }
-
-    // 測試欄位重新排序
-    console.log('🔄 測試欄位重新排序...');
-    pivotTable.reorderFields(['產品', '地區', '銷售額', '月份']);
-    console.log('✅ 欄位重新排序完成');
-
-    // 清除篩選
-    console.log('🧹 清除所有篩選...');
-    pivotTable.clearFilters();
-    console.log('✅ 篩選已清除');
-
-    // 匯出到新工作表
-    console.log('📤 匯出 Pivot Table 到新工作表...');
-    const exportSheet = pivotTable.exportToWorksheet('Pivot_Table_匯出');
-    console.log('✅ Pivot Table 已匯出到工作表: Pivot_Table_匯出');
-
-    // 生成包含動態 Pivot Table 的 Excel 檔案
-    console.log('💾 生成包含動態 Pivot Table 的 Excel 檔案...');
-    
-    try {
-      // 使用新的方法生成包含 Pivot Table 的檔案
-      const buffer = await workbook.writeBufferWithPivotTables();
-      fs.writeFileSync('test-dynamic-pivot.xlsx', new Uint8Array(buffer));
-      console.log('✅ 動態 Pivot Table Excel 檔案已生成: test-dynamic-pivot.xlsx');
-    } catch (error) {
-      console.log('⚠️ 動態 Pivot Table 生成失敗，使用標準方法:', error.message);
-      // 回退到標準方法
-      const buffer = await workbook.writeBuffer();
-      fs.writeFileSync('test-dynamic-pivot.xlsx', new Uint8Array(buffer));
-      console.log('✅ 標準 Excel 檔案已生成: test-dynamic-pivot.xlsx');
-    }
-
-    // 最終統計
-    console.log('\n📊 最終統計:');
-    console.log(`工作表數量: ${workbook.getWorksheets().length}`);
-    console.log(`Pivot Table 數量: ${workbook.getAllPivotTables().length}`);
-
-    // Pivot Table 詳細資訊
-    const finalPivotTable = workbook.getPivotTable('銷售分析表');
-    if (finalPivotTable) {
-      console.log('\n🎯 Pivot Table: 銷售分析表');
-      console.log(`  來源範圍: ${finalPivotTable.config.sourceRange}`);
-      console.log(`  目標範圍: ${finalPivotTable.config.targetRange}`);
-      console.log(`  欄位數量: ${finalPivotTable.config.fields.length}`);
-      console.log(`  資料行數: ${finalPivotTable.getData().length}`);
-      
-      // 如果是動態 Pivot Table，顯示快取和表格 ID
-      if (finalPivotTable.getCacheId && finalPivotTable.getTableId) {
-        console.log(`  快取 ID: ${finalPivotTable.getCacheId()}`);
-        console.log(`  表格 ID: ${finalPivotTable.getTableId()}`);
+        
+      } catch (zipError) {
+        console.log('⚠️ 無法驗證 ZIP 結構:', zipError.message);
       }
+      
+    } else {
+      console.log('❌ 最終檔案不存在');
     }
-
-    console.log('\n🎯 動態 Pivot Table 功能測試完成！');
-    console.log('📝 注意: 真正的動態 Pivot Table 需要在 Excel 中打開才能看到互動式功能');
-    console.log('📝 生成的檔案包含完整的 PivotCache 和 PivotTable XML 結構');
-
+    
+    console.log('\n🎯 動態樞紐分析表測試完成！');
+    console.log('請打開 Excel 檔案檢查樞紐分析表是否正確顯示。');
+    console.log('樞紐分析表應該出現在 Pivot 工作表的 A3 位置。');
+    console.log('修改「數據」工作表的資料後，可以在樞紐分析表上按右鍵選擇「重新整理」來更新。');
+    
   } catch (error) {
     console.error('❌ 測試失敗:', error);
-    console.error(error.stack);
+    console.error('錯誤詳情:', error.stack);
   }
 }
 
-testDynamicPivotTable();
+// 執行測試
+testDynamicPivot().catch(console.error);

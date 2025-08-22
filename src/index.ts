@@ -21,6 +21,9 @@ export { ChartImpl, ChartFactory } from './charts';
 // 匯出 Pivot Table 相關類別
 export { PivotTableImpl } from './pivot-table-impl';
 
+// 匯出動態樞紐分析表建構器
+export * from './pivot-builder';
+
 // 匯出工作簿相關類別
 export { WorkbookImpl } from './workbook';
 

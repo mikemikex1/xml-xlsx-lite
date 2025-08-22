@@ -139,6 +139,9 @@ toJSON(opts?): Record<string, CellValue>[];  // 轉換為 JSON
 - ✅ 欄位管理和配置
 - ✅ 篩選和排序功能
 - ✅ 樣式應用和格式化
+- ✅ **動態樞紐分析表建構器**（新增）
+- ✅ **Excel 原生樞紐分析表 XML 生成**
+- ✅ **可刷新的樞紐分析表支援**
 
 **技術實現**：
 ```typescript
@@ -161,6 +164,28 @@ export class PivotTableImpl implements PivotTable {
 // 支援的欄位類型
 type PivotFieldType = 'row' | 'column' | 'value' | 'filter';
 type PivotFunction = 'sum' | 'count' | 'average' | 'max' | 'min';
+
+// 新增：動態樞紐分析表建構器
+export async function addPivotToWorkbookBuffer(
+  workbookBuf: Buffer, 
+  opt: CreatePivotOptions
+): Promise<Buffer>;
+
+export interface CreatePivotOptions {
+  sourceSheet: string;     // 來源工作表名稱
+  sourceRange: string;     // 資料範圍（A1:D100）
+  targetSheet: string;     // 目標工作表名稱
+  anchorCell: string;      // 樞紐分析表錨點（A3）
+  layout: PivotLayout;     // 欄位配置
+  refreshOnLoad?: boolean; // 開啟時自動重新整理
+  styleName?: string;      // 樣式名稱
+}
+
+export interface PivotLayout {
+  rows?: PivotFieldSpec[];    // 行欄位
+  cols?: PivotFieldSpec[];    // 列欄位
+  values: PivotValueSpec[];   // 值欄位
+}
 ```
 
 **測試結果**：
