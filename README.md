@@ -2,8 +2,6 @@
 
 > **Lightweight Excel XLSX generator with full Excel features: dynamic pivot tables, charts, styles, and Chinese support. Fast, TypeScript-friendly Excel file creation library.**
 
-> **輕量級 Excel XLSX 生成器，支援樞紐分析表、圖表、樣式，完整繁體中文支援。**
-
 [![npm version](https://img.shields.io/npm/v/xml-xlsx-lite.svg)](https://www.npmjs.com/package/xml-xlsx-lite)
 [![npm downloads](https://img.shields.io/npm/dm/xml-xlsx-lite.svg)](https://www.npmjs.com/package/xml-xlsx-lite)
 [![License](https://img.shields.io/npm/l/xml-xlsx-lite.svg)](https://github.com/mikemikex1/xml-xlsx-lite/blob/main/LICENSE)
@@ -15,14 +13,14 @@
 - [📦 Installation](#-installation)
 - [🎯 Quick Start](#-quick-start)
 - [📚 Complete Guide](#-complete-guide)
-  - [1. 創建 Excel 檔案](#1-創建-excel-檔案)
-  - [2. 基本儲存格操作](#2-基本儲存格操作)
-  - [3. 樣式和格式化](#3-樣式和格式化)
-  - [4. 工作表管理](#4-工作表管理)
-  - [5. 讀取 Excel 檔案](#5-讀取-excel-檔案)
-  - [6. 樞紐分析表](#6-樞紐分析表)
-  - [7. 圖表支援](#7-圖表支援)
-  - [8. 進階功能](#8-進階功能)
+  - [1. Create Excel Files](#1-create-excel-files)
+  - [2. Basic Cell Operations](#2-basic-cell-operations)
+  - [3. Styling and Formatting](#3-styling-and-formatting)
+  - [4. Worksheet Management](#4-worksheet-management)
+  - [5. Read Excel Files](#5-read-excel-files)
+  - [6. Pivot Tables](#6-pivot-tables)
+  - [7. Chart Support](#7-chart-support)
+  - [8. Advanced Features](#8-advanced-features)
 - [🔧 API Reference](#-api-reference)
 - [📖 Examples](#-examples)
 - [🚨 Important Notes](#-important-notes)
@@ -54,100 +52,100 @@ npm install xml-xlsx-lite
 ```typescript
 import { Workbook } from 'xml-xlsx-lite';
 
-// 創建工作簿
+// Create workbook
 const workbook = new Workbook();
 
-// 取得工作表
+// Get worksheet
 const worksheet = workbook.getWorksheet('Sheet1');
 
-// 設定儲存格
+// Set cells
 worksheet.setCell('A1', 'Hello World');
 worksheet.setCell('B1', 42);
 
-// 儲存檔案
+// Save file
 const buffer = await workbook.writeBuffer();
 ```
 
 ## 📚 Complete Guide
 
-### 1. 創建 Excel 檔案
+### 1. Create Excel Files
 
-#### 1.1 基本工作簿創建
+#### 1.1 Basic Workbook Creation
 
 ```typescript
 import { Workbook } from 'xml-xlsx-lite';
 
-// 創建新的工作簿
+// Create new workbook
 const workbook = new Workbook();
 
-// 取得預設工作表
+// Get default worksheet
 const worksheet = workbook.getWorksheet('Sheet1');
 
-// 設定標題
-worksheet.setCell('A1', '產品銷售報表');
-worksheet.setCell('A2', '2024年度');
+// Set title
+worksheet.setCell('A1', 'Product Sales Report');
+worksheet.setCell('A2', '2024 Annual');
 
-// 設定欄位標題
-worksheet.setCell('A3', '產品名稱');
-worksheet.setCell('B3', '銷售數量');
-worksheet.setCell('C3', '單價');
-worksheet.setCell('D3', '總金額');
+// Set column headers
+worksheet.setCell('A3', 'Product Name');
+worksheet.setCell('B3', 'Sales Quantity');
+worksheet.setCell('C3', 'Unit Price');
+worksheet.setCell('D3', 'Total Amount');
 
-// 設定資料
-worksheet.setCell('A4', '筆記型電腦');
+// Set data
+worksheet.setCell('A4', 'Laptop');
 worksheet.setCell('B4', 10);
 worksheet.setCell('C4', 35000);
 worksheet.setCell('D4', 350000);
 
-worksheet.setCell('A5', '滑鼠');
+worksheet.setCell('A5', 'Mouse');
 worksheet.setCell('B5', 50);
 worksheet.setCell('C5', 500);
 worksheet.setCell('D5', 25000);
 
-// 儲存檔案
+// Save file
 const buffer = await workbook.writeBuffer();
 ```
 
-#### 1.2 多工作表工作簿
+#### 1.2 Multi-Worksheet Workbook
 
 ```typescript
 const workbook = new Workbook();
 
-// 創建多個工作表
-const summarySheet = workbook.getWorksheet('總覽');
-const detailSheet = workbook.getWorksheet('詳細資料');
-const chartSheet = workbook.getWorksheet('圖表');
+// Create multiple worksheets
+const summarySheet = workbook.getWorksheet('Summary');
+const detailSheet = workbook.getWorksheet('Detailed Data');
+const chartSheet = workbook.getWorksheet('Charts');
 
-// 在不同工作表中設定資料
-summarySheet.setCell('A1', '銷售總覽');
-detailSheet.setCell('A1', '詳細銷售資料');
-chartSheet.setCell('A1', '銷售圖表');
+// Set data in different worksheets
+summarySheet.setCell('A1', 'Sales Summary');
+detailSheet.setCell('A1', 'Detailed Sales Data');
+chartSheet.setCell('A1', 'Sales Charts');
 ```
 
-### 2. 基本儲存格操作
+### 2. Basic Cell Operations
 
-#### 2.1 儲存格值設定
+#### 2.1 Cell Value Setting
 
 ```typescript
 const worksheet = workbook.getWorksheet('Sheet1');
 
-// 不同類型的資料
-worksheet.setCell('A1', '文字');                    // 字串
-worksheet.setCell('B1', 123);                       // 數字
-worksheet.setCell('C1', true);                      // 布林值
-worksheet.setCell('D1', new Date());                // 日期
-worksheet.setCell('E1', null);                      // 空值
-worksheet.setCell('F1', '');                        // 空字串
+// Different types of data
+worksheet.setCell('A1', 'Text');                    // String
+worksheet.setCell('B1', 123);                       // Number
+worksheet.setCell('C1', true);                      // Boolean
+worksheet.setCell('D1', new Date());                // Date
+worksheet.setCell('E1', null);                      // Null
+worksheet.setCell('F1', '');                        // Empty string
 
-// 使用座標
-worksheet.setCell('G1', '使用 A1 座標');
-worksheet.setCell(1, 8, '使用行列座標');            // 第1行，第8列
+// Using coordinates
+worksheet.setCell('G1', 'Using A1 coordinates');
+worksheet.setCell(1, 8, 'Using row-column coordinates'); // Row 1, Column 8
 ```
 
-#### 2.2 儲存格範圍操作
+#### 2.2 Cell Range Operations
 
 ```typescript
-// 設定範圍內的儲存格
+// Set cells in a range
 for (let row = 1; row <= 10; row++) {
     for (let col = 1; col <= 5; col++) {
         const value = `R${row}C${col}`;
@@ -155,41 +153,41 @@ for (let row = 1; row <= 10; row++) {
     }
 }
 
-// 設定整行
+// Set entire row
 for (let col = 1; col <= 5; col++) {
-    worksheet.setCell(1, col, `標題${col}`);
+    worksheet.setCell(1, col, `Title${col}`);
 }
 
-// 設定整列
+// Set entire column
 for (let row = 1; row <= 10; row++) {
-    worksheet.setCell(row, 1, `項目${row}`);
+    worksheet.setCell(row, 1, `Item${row}`);
 }
 ```
 
-### 3. 樣式和格式化
+### 3. Styling and Formatting
 
-#### 3.1 基本樣式
+#### 3.1 Basic Styling
 
 ```typescript
-// 字體樣式
-worksheet.setCell('A1', '粗體標題', {
+// Font styling
+worksheet.setCell('A1', 'Bold Title', {
     font: {
         bold: true,
         size: 16,
-        color: 'FF0000'  // 紅色
+        color: 'FF0000'  // Red
     }
 });
 
-// 對齊樣式
-worksheet.setCell('B1', '置中對齊', {
+// Alignment styling
+worksheet.setCell('B1', 'Center Aligned', {
     alignment: {
         horizontal: 'center',
         vertical: 'middle'
     }
 });
 
-// 邊框樣式
-worksheet.setCell('C1', '有邊框', {
+// Border styling
+worksheet.setCell('C1', 'With Borders', {
     border: {
         top: { style: 'thin', color: '000000' },
         bottom: { style: 'double', color: '000000' },
@@ -198,85 +196,85 @@ worksheet.setCell('C1', '有邊框', {
     }
 });
 
-// 填滿樣式
-worksheet.setCell('D1', '有背景色', {
+// Fill styling
+worksheet.setCell('D1', 'With Background', {
     fill: {
         type: 'solid',
-        color: 'FFFF00'  // 黃色
+        color: 'FFFF00'  // Yellow
     }
 });
 ```
 
-#### 3.2 數字格式
+#### 3.2 Number Formatting
 
 ```typescript
-// 貨幣格式
+// Currency format
 worksheet.setCell('A1', 1234.56, {
     numFmt: '¥#,##0.00'
 });
 
-// 百分比格式
+// Percentage format
 worksheet.setCell('B1', 0.1234, {
     numFmt: '0.00%'
 });
 
-// 日期格式
+// Date format
 worksheet.setCell('C1', new Date(), {
     numFmt: 'yyyy-mm-dd'
 });
 
-// 自訂格式
+// Custom format
 worksheet.setCell('D1', 42, {
-    numFmt: '0 "件"'
+    numFmt: '0 "items"'
 });
 ```
 
-#### 3.3 合併儲存格
+#### 3.3 Merge Cells
 
 ```typescript
-// 合併儲存格
+// Merge cells
 worksheet.mergeCells('A1:D1');
-worksheet.setCell('A1', '合併的標題');
+worksheet.setCell('A1', 'Merged Title');
 
-// 合併多行
+// Merge multiple rows
 worksheet.mergeCells('A2:A5');
-worksheet.setCell('A2', '垂直合併');
+worksheet.setCell('A2', 'Vertical Merge');
 ```
 
-### 4. 工作表管理
+### 4. Worksheet Management
 
-#### 4.1 欄寬和列高
+#### 4.1 Column Width and Row Height
 
 ```typescript
-// 設定欄寬
-worksheet.setColumnWidth('A', 20);      // 欄 A 寬度 20
-worksheet.setColumnWidth(2, 15);        // 欄 B 寬度 15
+// Set column width
+worksheet.setColumnWidth('A', 20);      // Column A width 20
+worksheet.setColumnWidth(2, 15);        // Column B width 15
 
-// 設定列高
-worksheet.setRowHeight(1, 30);          // 第1列高度 30
-worksheet.setRowHeight(2, 25);          // 第2列高度 25
+// Set row height
+worksheet.setRowHeight(1, 30);          // Row 1 height 30
+worksheet.setRowHeight(2, 25);          // Row 2 height 25
 ```
 
-#### 4.2 凍結窗格
+#### 4.2 Freeze Panes
 
 ```typescript
-// 凍結第一行和第一列
+// Freeze first row and first column
 worksheet.freezePanes(2, 2);
 
-// 只凍結第一行
+// Freeze only first row
 worksheet.freezePanes(2);
 
-// 只凍結第一列
+// Freeze only first column
 worksheet.freezePanes(undefined, 2);
 
-// 取消凍結
+// Unfreeze panes
 worksheet.unfreezePanes();
 ```
 
-#### 4.3 工作表保護
+#### 4.3 Worksheet Protection
 
 ```typescript
-// 保護工作表
+// Protect worksheet
 worksheet.protect('password123', {
     selectLockedCells: false,
     selectUnlockedCells: true,
@@ -285,63 +283,63 @@ worksheet.protect('password123', {
     formatRows: false
 });
 
-// 檢查保護狀態
+// Check protection status
 const isProtected = worksheet.isProtected();
 ```
 
-### 5. 讀取 Excel 檔案
+### 5. Read Excel Files
 
-#### 5.1 基本讀取
+#### 5.1 Basic Reading
 
 ```typescript
 import { Workbook } from 'xml-xlsx-lite';
 
-// 從檔案讀取
+// Read from file
 const workbook = await Workbook.readFile('existing-file.xlsx');
 
-// 從 Buffer 讀取
+// Read from Buffer
 const fs = require('fs');
 const buffer = fs.readFileSync('existing-file.xlsx');
 const workbook = await Workbook.readBuffer(buffer);
 ```
 
-#### 5.2 讀取工作表資料
+#### 5.2 Read Worksheet Data
 
 ```typescript
-// 取得工作表
+// Get worksheet
 const worksheet = workbook.getWorksheet('Sheet1');
 
-// 轉換為二維陣列
+// Convert to 2D array
 const arrayData = worksheet.toArray();
-console.log('陣列資料:', arrayData);
+console.log('Array data:', arrayData);
 
-// 轉換為 JSON 物件陣列
+// Convert to JSON object array
 const jsonData = worksheet.toJSON({ headerRow: 1 });
-console.log('JSON 資料:', jsonData);
+console.log('JSON data:', jsonData);
 
-// 取得特定範圍
+// Get specific range
 const rangeData = worksheet.getRange('A1:D10');
-console.log('範圍資料:', rangeData);
+console.log('Range data:', rangeData);
 ```
 
-#### 5.3 讀取選項
+#### 5.3 Reading Options
 
 ```typescript
 const workbook = await Workbook.readFile('file.xlsx', {
-    enableSharedStrings: true,      // 啟用共享字串優化
-    preserveStyles: true,           // 保留樣式資訊
-    preserveFormulas: true,         // 保留公式
-    preservePivotTables: true,      // 保留樞紐分析表
-    preserveCharts: true            // 保留圖表
+    enableSharedStrings: true,      // Enable shared strings optimization
+    preserveStyles: true,           // Preserve style information
+    preserveFormulas: true,         // Preserve formulas
+    preservePivotTables: true,      // Preserve pivot tables
+    preserveCharts: true            // Preserve charts
 });
 ```
 
-### 6. 樞紐分析表
+### 6. Pivot Tables
 
-#### 6.1 手動創建樞紐分析表
+#### 6.1 Manual Pivot Table Creation
 
 ```typescript
-// 創建手動樞紐分析表
+// Create manual pivot table
 const pivotData = [
     { department: 'IT', month: 'Jan', sales: 1000 },
     { department: 'IT', month: 'Feb', sales: 1200 },
@@ -359,20 +357,20 @@ workbook.createManualPivotTable(pivotData, {
 });
 ```
 
-#### 6.2 動態樞紐分析表
+#### 6.2 Dynamic Pivot Tables
 
 ```typescript
-// 創建基礎工作簿
+// Create base workbook
 const workbook = new Workbook();
 const dataSheet = workbook.getWorksheet('Data');
 
-// 填入資料
+// Fill in data
 const data = [
-    ['部門', '月份', '銷售額'],
-    ['IT', '1月', 1000],
-    ['IT', '2月', 1200],
-    ['HR', '1月', 800],
-    ['HR', '2月', 900]
+    ['Department', 'Month', 'Sales'],
+    ['IT', 'Jan', 1000],
+    ['IT', 'Feb', 1200],
+    ['HR', 'Jan', 800],
+    ['HR', 'Feb', 900]
 ];
 
 data.forEach((row, rowIndex) => {
@@ -382,10 +380,10 @@ data.forEach((row, rowIndex) => {
     });
 });
 
-// 儲存基礎檔案
+// Save base file
 const baseBuffer = await workbook.writeBuffer();
 
-// 動態插入樞紐分析表
+// Dynamically insert pivot table
 import { addPivotToWorkbookBuffer } from 'xml-xlsx-lite';
 
 const enhancedBuffer = await addPivotToWorkbookBuffer(baseBuffer, {
@@ -394,12 +392,12 @@ const enhancedBuffer = await addPivotToWorkbookBuffer(baseBuffer, {
     targetSheet: 'Pivot',
     anchorCell: 'A3',
     layout: {
-        rows: [{ name: '部門' }],
-        cols: [{ name: '月份' }],
+        rows: [{ name: 'Department' }],
+        cols: [{ name: 'Month' }],
         values: [{ 
-            name: '銷售額', 
+            name: 'Sales', 
             agg: 'sum', 
-            displayName: '總銷售額' 
+            displayName: 'Total Sales' 
         }]
     },
     refreshOnLoad: true,
@@ -407,156 +405,156 @@ const enhancedBuffer = await addPivotToWorkbookBuffer(baseBuffer, {
 });
 ```
 
-#### 6.3 樞紐分析表配置選項
+#### 6.3 Pivot Table Configuration Options
 
 ```typescript
 const pivotOptions = {
-    sourceSheet: 'Data',           // 來源工作表
-    sourceRange: 'A1:C100',        // 來源範圍
-    targetSheet: 'Pivot',          // 目標工作表
-    anchorCell: 'A3',              // 錨點儲存格
+    sourceSheet: 'Data',           // Source worksheet
+    sourceRange: 'A1:C100',        // Source range
+    targetSheet: 'Pivot',          // Target worksheet
+    anchorCell: 'A3',              // Anchor cell
     
     layout: {
-        rows: [                     // 行欄位
-            { name: '部門' },
-            { name: '產品' }        // 多層級行欄位
+        rows: [                     // Row fields
+            { name: 'Department' },
+            { name: 'Product' }     // Multi-level row fields
         ],
-        cols: [                     // 列欄位
-            { name: '月份' },
-            { name: '年份' }
+        cols: [                     // Column fields
+            { name: 'Month' },
+            { name: 'Year' }
         ],
-        values: [                   // 值欄位
+        values: [                   // Value fields
             { 
-                name: '銷售額', 
-                agg: 'sum',         // 彙總方式：sum, avg, count, max, min
-                displayName: '總銷售額',
+                name: 'Sales', 
+                agg: 'sum',         // Aggregation: sum, avg, count, max, min
+                displayName: 'Total Sales',
                 numberFormat: '#,##0'
             },
             { 
-                name: '數量', 
+                name: 'Quantity', 
                 agg: 'count',
-                displayName: '訂單數'
+                displayName: 'Order Count'
             }
         ]
     },
     
-    refreshOnLoad: true,            // 開啟時自動重新整理
-    styleName: 'PivotStyleMedium9', // 樞紐分析表樣式
-    showGrandTotals: true,          // 顯示總計
-    showSubTotals: true,            // 顯示小計
-    enableDrilldown: true           // 啟用向下鑽研
+    refreshOnLoad: true,            // Auto-refresh on open
+    styleName: 'PivotStyleMedium9', // Pivot table style
+    showGrandTotals: true,          // Show grand totals
+    showSubTotals: true,            // Show subtotals
+    enableDrilldown: true           // Enable drill-down
 };
 ```
 
-### 7. 圖表支援
+### 7. Chart Support
 
-#### 7.1 基本圖表
+#### 7.1 Basic Charts
 
 ```typescript
-// 創建圖表工作表
-const chartSheet = workbook.getWorksheet('圖表');
+// Create chart worksheet
+const chartSheet = workbook.getWorksheet('Charts');
 
-// 設定圖表資料
-chartSheet.setCell('A1', '月份');
-chartSheet.setCell('B1', '銷售額');
-chartSheet.setCell('A2', '1月');
+// Set chart data
+chartSheet.setCell('A1', 'Month');
+chartSheet.setCell('B1', 'Sales');
+chartSheet.setCell('A2', 'Jan');
 chartSheet.setCell('B2', 1000);
-chartSheet.setCell('A3', '2月');
+chartSheet.setCell('A3', 'Feb');
 chartSheet.setCell('B3', 1200);
-chartSheet.setCell('A4', '3月');
+chartSheet.setCell('A4', 'Mar');
 chartSheet.setCell('B4', 1100);
 
-// 添加圖表（基本支援）
+// Add chart (basic support)
 chartSheet.addChart({
     type: 'bar',
-    title: '月度銷售圖表',
+    title: 'Monthly Sales Chart',
     dataRange: 'A1:B4',
     position: { x: 100, y: 100, width: 400, height: 300 }
 });
 ```
 
-#### 7.2 圖表類型
+#### 7.2 Chart Types
 
 ```typescript
-// 支援的圖表類型
+// Supported chart types
 const chartTypes = [
-    'bar',          // 長條圖
-    'line',         // 折線圖
-    'pie',          // 圓餅圖
-    'column',       // 直條圖
-    'area',         // 區域圖
-    'scatter'       // 散佈圖
+    'bar',          // Bar chart
+    'line',         // Line chart
+    'pie',          // Pie chart
+    'column',       // Column chart
+    'area',         // Area chart
+    'scatter'       // Scatter chart
 ];
 
 chartTypes.forEach((type, index) => {
     const row = index + 1;
-    chartSheet.setCell(`A${row}`, `${type} 圖表`);
+    chartSheet.setCell(`A${row}`, `${type} Chart`);
     chartSheet.addChart({
         type: type,
-        title: `${type} 圖表示例`,
+        title: `${type} Chart Example`,
         dataRange: 'A1:B4',
         position: { x: 100, y: 100 + index * 100, width: 300, height: 200 }
     });
 });
 ```
 
-### 8. 進階功能
+### 8. Advanced Features
 
-#### 8.1 公式支援
+#### 8.1 Formula Support
 
 ```typescript
-// 設定公式
-worksheet.setFormula('D4', '=B4*C4');           // 乘法
-worksheet.setFormula('D5', '=B5*C5');           // 乘法
-worksheet.setFormula('D6', '=SUM(D4:D5)');     // 總和
-worksheet.setFormula('B6', '=SUM(B4:B5)');     // 數量總和
-worksheet.setFormula('C6', '=AVERAGE(C4:C5)'); // 平均單價
+// Set formulas
+worksheet.setFormula('D4', '=B4*C4');           // Multiplication
+worksheet.setFormula('D5', '=B5*C5');           // Multiplication
+worksheet.setFormula('D6', '=SUM(D4:D5)');     // Sum
+worksheet.setFormula('B6', '=SUM(B4:B5)');     // Quantity sum
+worksheet.setFormula('C6', '=AVERAGE(C4:C5)'); // Average price
 
-// 邏輯公式
-worksheet.setFormula('E4', '=IF(D4>100000,"高","低")');
+// Logical formulas
+worksheet.setFormula('E4', '=IF(D4>100000,"High","Low")');
 worksheet.setFormula('F4', '=AND(B4>5,C4>10000)');
 ```
 
-#### 8.2 條件格式
+#### 8.2 Conditional Formatting
 
 ```typescript
-// 設定條件格式（基本支援）
-worksheet.setCell('A1', '條件格式測試', {
+// Set conditional formatting (basic support)
+worksheet.setCell('A1', 'Conditional Format Test', {
     font: { bold: true },
     fill: { type: 'solid', color: 'FFFF00' }
 });
 
-// 根據值設定樣式
+// Set styles based on values
 const salesData = [1000, 1200, 800, 900, 1500];
 salesData.forEach((value, index) => {
     const row = index + 1;
     const cell = worksheet.setCell(`B${row}`, value);
     
-    // 根據銷售額設定顏色
+    // Set colors based on sales amount
     if (value > 1200) {
-        cell.style = { fill: { type: 'solid', color: '00FF00' } }; // 綠色
+        cell.style = { fill: { type: 'solid', color: '00FF00' } }; // Green
     } else if (value > 1000) {
-        cell.style = { fill: { type: 'solid', color: 'FFFF00' } }; // 黃色
+        cell.style = { fill: { type: 'solid', color: 'FFFF00' } }; // Yellow
     } else {
-        cell.style = { fill: { type: 'solid', color: 'FF0000' } }; // 紅色
+        cell.style = { fill: { type: 'solid', color: 'FF0000' } }; // Red
     }
 });
 ```
 
-#### 8.3 效能優化
+#### 8.3 Performance Optimization
 
 ```typescript
-// 大量資料處理
+// Large data processing
 const largeData = [];
 for (let i = 0; i < 10000; i++) {
     largeData.push({
         id: i + 1,
-        name: `項目${i + 1}`,
+        name: `Item${i + 1}`,
         value: Math.random() * 1000
     });
 }
 
-// 批次處理
+// Batch processing
 const batchSize = 1000;
 for (let i = 0; i < largeData.length; i += batchSize) {
     const batch = largeData.slice(i, i + batchSize);
@@ -573,40 +571,40 @@ for (let i = 0; i < largeData.length; i += batchSize) {
 
 ### Workbook
 
-| 方法 | 描述 | 狀態 |
-|------|------|------|
-| `new Workbook()` | 創建新工作簿 | ✅ Stable |
-| `getWorksheet(name)` | 取得工作表 | ✅ Stable |
-| `writeBuffer()` | 輸出為 Buffer | ✅ Stable |
-| `writeFile(path)` | 直接儲存檔案 | ✅ Stable |
-| `writeFileWithPivotTables(path, options)` | 儲存含樞紐分析表的檔案 | ✅ Stable |
-| `createManualPivotTable(data, options)` | 創建手動樞紐分析表 | ✅ Stable |
+| Method | Description | Status |
+|--------|-------------|---------|
+| `new Workbook()` | Create new workbook | ✅ Stable |
+| `getWorksheet(name)` | Get worksheet | ✅ Stable |
+| `writeBuffer()` | Output as Buffer | ✅ Stable |
+| `writeFile(path)` | Save file directly | ✅ Stable |
+| `writeFileWithPivotTables(path, options)` | Save file with pivot tables | ✅ Stable |
+| `createManualPivotTable(data, options)` | Create manual pivot table | ✅ Stable |
 
 ### Worksheet
 
-| 方法 | 描述 | 狀態 |
-|------|------|------|
-| `setCell(address, value, options)` | 設定儲存格 | ✅ Stable |
-| `getCell(address)` | 取得儲存格 | ✅ Stable |
-| `mergeCells(range)` | 合併儲存格 | ✅ Stable |
-| `setColumnWidth(col, width)` | 設定欄寬 | ✅ Stable |
-| `setRowHeight(row, height)` | 設定列高 | ✅ Stable |
-| `freezePanes(row?, col?)` | 凍結窗格 | ✅ Stable |
-| `protect(password, options)` | 保護工作表 | ✅ Stable |
-| `addChart(chart)` | 添加圖表 | 🔶 Experimental |
+| Method | Description | Status |
+|--------|-------------|---------|
+| `setCell(address, value, options)` | Set cell | ✅ Stable |
+| `getCell(address)` | Get cell | ✅ Stable |
+| `mergeCells(range)` | Merge cells | ✅ Stable |
+| `setColumnWidth(col, width)` | Set column width | ✅ Stable |
+| `setRowHeight(row, height)` | Set row height | ✅ Stable |
+| `freezePanes(row?, col?)` | Freeze panes | ✅ Stable |
+| `protect(password, options)` | Protect worksheet | ✅ Stable |
+| `addChart(chart)` | Add chart | 🔶 Experimental |
 
 ### Reading
 
-| 方法 | 描述 | 狀態 |
-|------|------|------|
-| `Workbook.readFile(path, options)` | 從檔案讀取 | ✅ Stable |
-| `Workbook.readBuffer(buffer, options)` | 從 Buffer 讀取 | ✅ Stable |
-| `worksheet.toArray()` | 轉換為陣列 | ✅ Stable |
-| `worksheet.toJSON(options)` | 轉換為 JSON | ✅ Stable |
+| Method | Description | Status |
+|--------|-------------|---------|
+| `Workbook.readFile(path, options)` | Read from file | ✅ Stable |
+| `Workbook.readBuffer(buffer, options)` | Read from Buffer | ✅ Stable |
+| `worksheet.toArray()` | Convert to array | ✅ Stable |
+| `worksheet.toJSON(options)` | Convert to JSON | ✅ Stable |
 
 ## 📖 Examples
 
-### 完整範例：銷售報表系統
+### Complete Example: Sales Report System
 
 ```typescript
 import { Workbook } from 'xml-xlsx-lite';
@@ -614,23 +612,23 @@ import { Workbook } from 'xml-xlsx-lite';
 async function createSalesReport() {
     const workbook = new Workbook();
     
-    // 1. 創建資料工作表
-    const dataSheet = workbook.getWorksheet('銷售資料');
+    // 1. Create data worksheet
+    const dataSheet = workbook.getWorksheet('Sales Data');
     
-    // 設定標題
-    dataSheet.setCell('A1', '日期', { font: { bold: true } });
-    dataSheet.setCell('B1', '產品', { font: { bold: true } });
-    dataSheet.setCell('C1', '數量', { font: { bold: true } });
-    dataSheet.setCell('D1', '單價', { font: { bold: true } });
-    dataSheet.setCell('E1', '總額', { font: { bold: true } });
+    // Set headers
+    dataSheet.setCell('A1', 'Date', { font: { bold: true } });
+    dataSheet.setCell('B1', 'Product', { font: { bold: true } });
+    dataSheet.setCell('C1', 'Quantity', { font: { bold: true } });
+    dataSheet.setCell('D1', 'Unit Price', { font: { bold: true } });
+    dataSheet.setCell('E1', 'Total Amount', { font: { bold: true } });
     
-    // 填入資料
+    // Fill in data
     const salesData = [
-        ['2024-01-01', '筆記型電腦', 2, 35000, 70000],
-        ['2024-01-01', '滑鼠', 10, 500, 5000],
-        ['2024-01-02', '鍵盤', 5, 800, 4000],
-        ['2024-01-02', '螢幕', 3, 8000, 24000],
-        ['2024-01-03', '耳機', 8, 1200, 9600]
+        ['2024-01-01', 'Laptop', 2, 35000, 70000],
+        ['2024-01-01', 'Mouse', 10, 500, 5000],
+        ['2024-01-02', 'Keyboard', 5, 800, 4000],
+        ['2024-01-02', 'Monitor', 3, 8000, 24000],
+        ['2024-01-03', 'Headphones', 8, 1200, 9600]
     ];
     
     salesData.forEach((row, index) => {
@@ -640,13 +638,13 @@ async function createSalesReport() {
             dataSheet.setCell(`${col}${rowNum}`, value);
         });
         
-        // 設定公式
+        // Set formulas
         const rowNum2 = index + 2;
         dataSheet.setFormula(`E${rowNum2}`, `=C${rowNum2}*D${rowNum2}`);
     });
     
-    // 2. 創建樞紐分析表
-    const pivotSheet = workbook.getWorksheet('樞紐分析');
+    // 2. Create pivot table
+    const pivotSheet = workbook.getWorksheet('Pivot Analysis');
     workbook.createManualPivotTable(salesData.map(row => ({
         date: row[0],
         product: row[1],
@@ -661,14 +659,14 @@ async function createSalesReport() {
         numberFormat: '#,##0'
     });
     
-    // 3. 創建圖表
-    const chartSheet = workbook.getWorksheet('圖表');
-    chartSheet.setCell('A1', '產品銷售圖表', { font: { bold: true, size: 16 } });
+    // 3. Create charts
+    const chartSheet = workbook.getWorksheet('Charts');
+    chartSheet.setCell('A1', 'Product Sales Chart', { font: { bold: true, size: 16 } });
     
-    // 4. 儲存檔案
-    await workbook.writeFileWithPivotTables('銷售報表.xlsx');
+    // 4. Save file
+    await workbook.writeFileWithPivotTables('Sales Report.xlsx');
     
-    console.log('銷售報表已創建完成！');
+    console.log('Sales report created successfully!');
 }
 
 createSalesReport();
@@ -676,61 +674,61 @@ createSalesReport();
 
 ## 🚨 Important Notes
 
-### ⚠️ 重要提醒
+### ⚠️ Important Reminders
 
-- **不要使用 `writeFile()` 方法**：此方法尚未完全實現，請使用 `writeBuffer()` + `fs.writeFileSync()` 或新的 `writeFileWithPivotTables()` 方法
-- **樞紐分析表限制**：動態樞紐分析表需要先在 Excel 中手動重新整理一次
-- **瀏覽器相容性**：某些功能（如檔案讀取）僅支援 Node.js 環境
+- **Do NOT use `writeFile()` method**: This method is not fully implemented, please use `writeBuffer()` + `fs.writeFileSync()` or the new `writeFileWithPivotTables()` method
+- **Pivot Table Limitations**: Dynamic pivot tables need to be manually refreshed once in Excel
+- **Browser Compatibility**: Some features (such as file reading) only support Node.js environment
 
-### 🔧 正確的檔案儲存方式
+### 🔧 Correct File Saving Methods
 
 ```typescript
-// ❌ 錯誤方式
+// ❌ Wrong way
 await workbook.writeFile('file.xlsx');
 
-// ✅ 正確方式 1：使用 Buffer
+// ✅ Correct way 1: Use Buffer
 const buffer = await workbook.writeBuffer();
 const fs = require('fs');
 fs.writeFileSync('file.xlsx', new Uint8Array(buffer));
 
-// ✅ 正確方式 2：使用新的便捷方法
+// ✅ Correct way 2: Use new convenient method
 await workbook.writeFileWithPivotTables('file.xlsx', pivotOptions);
 ```
 
 ## 📊 Feature Matrix
 
-| 功能 | 狀態 | 說明 | 替代方案 |
-|------|------|------|----------|
-| **基本功能** |
-| 創建工作簿 | ✅ Stable | 完全支援 | - |
-| 儲存格操作 | ✅ Stable | 完全支援 | - |
-| 樣式設定 | ✅ Stable | 完全支援 | - |
-| 公式支援 | ✅ Stable | 基本公式 | - |
-| **進階功能** |
-| 樞紐分析表 | 🔶 Experimental | 動態插入 | 手動創建 |
-| 圖表支援 | 🔶 Experimental | 基本支援 | 手動創建 |
-| 檔案讀取 | ✅ Stable | 完全支援 | - |
-| **效能優化** |
-| 大量資料 | ✅ Stable | 批次處理 | 串流處理 |
-| 記憶體優化 | ✅ Stable | 自動優化 | 手動控制 |
+| Feature | Status | Description | Alternatives |
+|---------|--------|-------------|--------------|
+| **Basic Features** |
+| Create Workbook | ✅ Stable | Fully supported | - |
+| Cell Operations | ✅ Stable | Fully supported | - |
+| Style Setting | ✅ Stable | Fully supported | - |
+| Formula Support | ✅ Stable | Basic formulas | - |
+| **Advanced Features** |
+| Pivot Tables | 🔶 Experimental | Dynamic insertion | Manual creation |
+| Chart Support | 🔶 Experimental | Basic support | Manual creation |
+| File Reading | ✅ Stable | Fully supported | - |
+| **Performance Optimization** |
+| Large Data | ✅ Stable | Batch processing | Streaming processing |
+| Memory Optimization | ✅ Stable | Auto-optimization | Manual control |
 
 ## 🌐 Browser Support
 
-- ✅ **Node.js**: 完全支援
-- 🔶 **現代瀏覽器**: 基本功能支援（部分功能受限）
-- ❌ **舊版瀏覽器**: 不支援
+- ✅ **Node.js**: Fully supported
+- 🔶 **Modern Browsers**: Basic feature support (some features limited)
+- ❌ **Legacy Browsers**: Not supported
 
-### 瀏覽器使用範例
+### Browser Usage Example
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>xml-xlsx-lite 瀏覽器測試</title>
+    <title>xml-xlsx-lite Browser Test</title>
 </head>
 <body>
-    <h1>Excel 生成測試</h1>
-    <button onclick="generateExcel()">生成 Excel</button>
+    <h1>Excel Generation Test</h1>
+    <button onclick="generateExcel()">Generate Excel</button>
     
     <script type="module">
         import { Workbook } from './node_modules/xml-xlsx-lite/dist/index.esm.js';
@@ -744,7 +742,7 @@ await workbook.writeFileWithPivotTables('file.xlsx', pivotOptions);
             
             const buffer = await workbook.writeBuffer();
             
-            // 下載檔案
+            // Download file
             const blob = new Blob([buffer], { 
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
             });
@@ -762,9 +760,9 @@ await workbook.writeFileWithPivotTables('file.xlsx', pivotOptions);
 
 ## 🤝 Contributing
 
-歡迎貢獻！請查看我們的 [貢獻指南](CONTRIBUTING.md)。
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### 開發環境設置
+### Development Environment Setup
 
 ```bash
 git clone https://github.com/mikemikex1/xml-xlsx-lite.git
@@ -773,29 +771,29 @@ npm install
 npm run dev
 ```
 
-### 測試
+### Testing
 
 ```bash
-npm run test:all        # 運行所有測試
-npm run verify          # 驗證功能
-npm run build           # 構建專案
+npm run test:all        # Run all tests
+npm run verify          # Verify functionality
+npm run build           # Build project
 ```
 
 ## 📄 License
 
-MIT License - 詳見 [LICENSE](LICENSE) 檔案。
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🌟 特色功能展示
+## 🌟 Feature Showcase
 
-### 🚀 快速開始
+### 🚀 Quick Start
 
 ```bash
-# 安裝
+# Install
 npm install xml-xlsx-lite
 
-# 基本使用
+# Basic usage
 node -e "
 const { Workbook } = require('xml-xlsx-lite');
 const wb = new Workbook();
@@ -805,20 +803,20 @@ wb.writeBuffer().then(buf => require('fs').writeFileSync('test.xlsx', new Uint8A
 "
 ```
 
-### 📊 樞紐分析表示例
+### 📊 Pivot Table Example
 
 ```typescript
-// 創建包含樞紐分析表的完整報表
+// Create complete report with pivot tables
 const workbook = new Workbook();
-const dataSheet = workbook.getWorksheet('資料');
+const dataSheet = workbook.getWorksheet('Data');
 
-// 填入銷售資料
+// Fill in sales data
 const salesData = [
-    ['部門', '月份', '產品', '數量', '金額'],
-    ['IT', '1月', '筆電', 5, 175000],
-    ['IT', '2月', '筆電', 3, 105000],
-    ['HR', '1月', '辦公用品', 20, 4000],
-    ['HR', '2月', '辦公用品', 15, 3000]
+    ['Department', 'Month', 'Product', 'Quantity', 'Amount'],
+    ['IT', 'Jan', 'Laptop', 5, 175000],
+    ['IT', 'Feb', 'Laptop', 3, 105000],
+    ['HR', 'Jan', 'Office Supplies', 20, 4000],
+    ['HR', 'Feb', 'Office Supplies', 15, 3000]
 ];
 
 salesData.forEach((row, i) => {
@@ -828,28 +826,28 @@ salesData.forEach((row, i) => {
     });
 });
 
-// 創建手動樞紐分析表
+// Create manual pivot table
 workbook.createManualPivotTable(salesData.slice(1).map(row => ({
-    部門: row[0],
-    月份: row[1],
-    產品: row[2],
-    數量: row[3],
-    金額: row[4]
+    Department: row[0],
+    Month: row[1],
+    Product: row[2],
+    Quantity: row[3],
+    Amount: row[4]
 })), {
-    rowField: '部門',
-    columnField: '月份',
-    valueField: '金額',
+    rowField: 'Department',
+    columnField: 'Month',
+    valueField: 'Amount',
     aggregation: 'sum'
 });
 
-// 儲存檔案
-await workbook.writeFileWithPivotTables('銷售樞紐報表.xlsx');
+// Save file
+await workbook.writeFileWithPivotTables('Sales Pivot Report.xlsx');
 ```
 
 ---
 
-**🎯 目標**: 提供最完整、最易用的 Excel 生成解決方案！
+**🎯 Goal**: Provide the most complete and easy-to-use Excel generation solution!
 
-**💡 特色**: 從基本操作到進階功能，從零開始的完整指南！
+**💡 Features**: From basic operations to advanced features, complete guide from zero to hero!
 
-**🚀 願景**: 讓每個開發者都能輕鬆創建專業的 Excel 報表！
+**🚀 Vision**: Let every developer easily create professional Excel reports!
